@@ -17,8 +17,11 @@ spec:
               properties:
                 taskref:
                   type: string
+                stage:
+                  type: integer
                 parallel:
                   type: boolean
+            
   scope: Namespaced
   names:
     plural: pipelines

@@ -4,4 +4,5 @@ metadata:
   name: hello-world
 spec:
   taskref: hello
+  stage: 1
   parallel: false
