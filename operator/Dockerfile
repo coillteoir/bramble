@@ -11,6 +11,8 @@ COPY cmd ./cmd
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o /lugh
 
+LABEL stage=builder
+
 #Ubuntu base image to test pod
 FROM ubuntu:latest
 

@@ -27,11 +27,15 @@ var rootCmd = &cobra.Command{
 			return err
 		}
 
+		fmt.Println("Config created")
+
 		clientset, err := kubernetes.NewForConfig(config)
 
 		if err != nil {
 			return err
 		}
+
+		fmt.Println("Clientset created")
 
 		pods, err := clientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
 
