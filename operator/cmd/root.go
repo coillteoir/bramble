@@ -37,14 +37,14 @@ var rootCmd = &cobra.Command{
 
 		fmt.Println("Clientset created")
 
-		pods, err := clientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
+		pods, err := clientset.CoreV1().Pods("default").List(context.TODO(), metav1.ListOptions{})
 
 		if err != nil {
 			fmt.Println("Pods can't be found")
 			return err
 		}
 
-		fmt.Printf("There are %d pods in the cluster\n", len(pods.Items))
+		fmt.Printf("There are %d pods in the default namespace\n", len(pods.Items))
 
 		return nil
 	},
