@@ -1,8 +1,0 @@
-apiVersion: lugh.dev/v1
-kind: Pipeline
-metadata:
-  name: hello-world
-spec:
-  taskref: hello
-  stage: 1
-  parallel: false

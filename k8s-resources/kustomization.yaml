@@ -1,4 +1,0 @@
-resources:
-  - CRD.yaml
-  - pod.yaml
-  - rbac
