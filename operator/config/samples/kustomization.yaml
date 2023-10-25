@@ -1,0 +1,5 @@
+## Append samples you want in your CSV to this file as resources ##
+resources:
+- lugh_v1_pipeline.yaml
+- lugh_v1_task.yaml
+#+kubebuilder:scaffold:manifestskustomizesamples
