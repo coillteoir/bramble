@@ -1,5 +1,5 @@
 build:
-	go build .
+	go build -o bin/lugh
 
 lint:
 	golangci-lint run
