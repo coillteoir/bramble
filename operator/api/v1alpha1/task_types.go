@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1
+package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,8 +28,17 @@ type TaskSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Task. Edit task_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// Docker image which will be used.
+	Image string `json:"image"`
+
+	// Command executed by the container,
+	// can be used to determine the behaviour of a CLI app.
+	Command []string `json:"command"`
+
+	// Stages allow developers to specify stages of concurrent execution.
+	// For example, testing and linting come before an image build. They can be ran concurrently
+	// By default every task is stage zero.
+	Stage int `json:"stage,omitempty"`
 }
 
 // TaskStatus defines the observed state of Task

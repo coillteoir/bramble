@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	lughv1 "github.com/davidlynch-sd/lugh/api/v1"
+	lughv1alpha1 "github.com/davidlynch-sd/lugh/api/v1alpha1"
 )
 
 // PipelineReconciler reconciles a Pipeline object
@@ -57,6 +57,6 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 // SetupWithManager sets up the controller with the Manager.
 func (r *PipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&lughv1.Pipeline{}).
+		For(&lughv1alpha1.Pipeline{}).
 		Complete(r)
 }

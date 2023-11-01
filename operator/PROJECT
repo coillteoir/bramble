@@ -18,8 +18,8 @@ resources:
   domain: lugh.dev
   group: lugh
   kind: Pipeline
-  path: github.com/davidlynch-sd/lugh/api/v1
-  version: v1
+  path: github.com/davidlynch-sd/lugh/api/v1alpha1
+  version: v1alpha1
 - api:
     crdVersion: v1
     namespaced: true
@@ -27,6 +27,6 @@ resources:
   domain: lugh.dev
   group: lugh
   kind: Task
-  path: github.com/davidlynch-sd/lugh/api/v1
-  version: v1
+  path: github.com/davidlynch-sd/lugh/api/v1alpha1
+  version: v1alpha1
 version: "3"

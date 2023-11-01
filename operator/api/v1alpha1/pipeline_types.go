@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1
+package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,7 +29,11 @@ type PipelineSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of Pipeline. Edit pipeline_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+
+	// Allows developers to create a list of tasks
+	Tasks []Task `json:"tasks,omitempty"`
+	// Allows developers to use pre applied tasks to the cluster
+	TaskRefs []string `json:"taskRefs,omitempty"`
 }
 
 // PipelineStatus defines the observed state of Pipeline
