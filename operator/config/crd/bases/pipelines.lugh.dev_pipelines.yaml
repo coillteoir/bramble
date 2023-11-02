@@ -5,9 +5,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.11.1
   creationTimestamp: null
-  name: pipelines.lugh.lugh.dev
+  name: pipelines.pipelines.lugh.dev
 spec:
-  group: lugh.lugh.dev
+  group: pipelines.lugh.dev
   names:
     kind: Pipeline
     listKind: PipelineList

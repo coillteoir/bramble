@@ -1,12 +1,12 @@
-apiVersion: lugh.lugh.dev/v1alpha1
-kind: Task
+apiVersion: pipelines.lugh.dev/v1alpha1
+kind: Pipeline
 metadata:
   labels:
-    app.kubernetes.io/name: task
-    app.kubernetes.io/instance: task-sample
+    app.kubernetes.io/name: pipeline
+    app.kubernetes.io/instance: pipeline-sample
     app.kubernetes.io/part-of: operator
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: operator
-  name: task-sample
+  name: pipeline-sample
 spec:
   # TODO(user): Add fields here

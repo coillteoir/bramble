@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	lughv1alpha1 "github.com/davidlynch-sd/lugh/api/v1alpha1"
+	pipelinesv1alpha1 "github.com/davidlynch-sd/lugh/api/v1alpha1"
 )
 
 // PipelineReconciler reconciles a Pipeline object
@@ -33,9 +33,9 @@ type PipelineReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=lugh.lugh.dev,resources=pipelines,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=lugh.lugh.dev,resources=pipelines/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=lugh.lugh.dev,resources=pipelines/finalizers,verbs=update
+//+kubebuilder:rbac:groups=pipelines.lugh.dev,resources=pipelines,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=pipelines.lugh.dev,resources=pipelines/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=pipelines.lugh.dev,resources=pipelines/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -57,6 +57,6 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 // SetupWithManager sets up the controller with the Manager.
 func (r *PipelineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&lughv1alpha1.Pipeline{}).
+		For(&pipelinesv1alpha1.Pipeline{}).
 		Complete(r)
 }

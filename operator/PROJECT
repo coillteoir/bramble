@@ -16,8 +16,8 @@ resources:
     namespaced: true
   controller: true
   domain: lugh.dev
-  group: lugh
-  kind: Pipeline
+  group: pipelines
+  kind: Task
   path: github.com/davidlynch-sd/lugh/api/v1alpha1
   version: v1alpha1
 - api:
@@ -25,8 +25,8 @@ resources:
     namespaced: true
   controller: true
   domain: lugh.dev
-  group: lugh
-  kind: Task
+  group: pipelines
+  kind: Pipeline
   path: github.com/davidlynch-sd/lugh/api/v1alpha1
   version: v1alpha1
 version: "3"
