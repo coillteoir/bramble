@@ -2,13 +2,13 @@ apiVersion: pipelines.lugh.dev/v1alpha1
 kind: Task
 metadata:
   labels:
-    app.kubernetes.io/name: task
-    app.kubernetes.io/instance: task-sample
+    app.kubernetes.io/name: t2
+    app.kubernetes.io/instance: t2
     app.kubernetes.io/part-of: operator
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: operator
-  name: task-sample
+  name: t2
 spec:
-  image: ubuntu
+  image: nginx
   command: ["sh", "-c", "echo good morning"]
   stage: 0

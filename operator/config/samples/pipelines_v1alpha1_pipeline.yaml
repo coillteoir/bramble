@@ -10,3 +10,13 @@ metadata:
   name: pipeline-sample
 spec:
   # TODO(user): Add fields here
+  tasks:
+    - contianer: alpine
+      commands: ["sh", "-c", "good evening"]
+      stage: 0
+    - container: pytorch
+      commands: ["ml stuff"]
+      stage: 0
+  taskRefs:
+    - task-sample
+    - 1

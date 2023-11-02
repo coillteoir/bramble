@@ -23,6 +23,11 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+type TaskRef struct {
+	Name  string `json:"name,omitempty"`
+	Stage int    `json:"stage,omitempty"`
+}
+
 // PipelineSpec defines the desired state of Pipeline
 type PipelineSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -31,9 +36,9 @@ type PipelineSpec struct {
 	// Foo is an example field of Pipeline. Edit pipeline_types.go to remove/update
 
 	// Allows developers to create a list of tasks
-	Tasks []Task `json:"tasks,omitempty"`
+	Tasks []TaskSpec `json:"tasks,omitempty"`
 	// Allows developers to use pre applied tasks to the cluster
-	TaskRefs []string `json:"taskRefs,omitempty"`
+	TaskRefs []TaskRef `json:"taskRefs,omitempty"`
 }
 
 // PipelineStatus defines the observed state of Pipeline

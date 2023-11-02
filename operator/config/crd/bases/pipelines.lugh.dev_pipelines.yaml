@@ -38,52 +38,36 @@ spec:
               taskRefs:
                 description: Allows developers to use pre applied tasks to the cluster
                 items:
-                  type: string
+                  properties:
+                    name:
+                      type: string
+                    stage:
+                      type: integer
+                  type: object
                 type: array
               tasks:
                 description: Allows developers to create a list of tasks
                 items:
-                  description: Task is the Schema for the tasks API
+                  description: TaskSpec defines the desired state of Task
                   properties:
-                    apiVersion:
-                      description: 'APIVersion defines the versioned schema of this
-                        representation of an object. Servers should convert recognized
-                        schemas to the latest internal value, and may reject unrecognized
-                        values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                    command:
+                      description: Command executed by the container, can be used
+                        to determine the behaviour of a CLI app.
+                      items:
+                        type: string
+                      type: array
+                    image:
+                      description: Docker image which will be used.
                       type: string
-                    kind:
-                      description: 'Kind is a string value representing the REST resource
-                        this object represents. Servers may infer this from the endpoint
-                        the client submits requests to. Cannot be updated. In CamelCase.
-                        More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-                      type: string
-                    metadata:
-                      type: object
-                    spec:
-                      description: TaskSpec defines the desired state of Task
-                      properties:
-                        command:
-                          description: Command executed by the container, can be used
-                            to determine the behaviour of a CLI app.
-                          items:
-                            type: string
-                          type: array
-                        image:
-                          description: Docker image which will be used.
-                          type: string
-                        stage:
-                          description: Stages allow developers to specify stages of
-                            concurrent execution. For example, testing and linting
-                            come before an image build. They can be ran concurrently
-                            By default every task is stage zero.
-                          type: integer
-                      required:
-                      - command
-                      - image
-                      type: object
-                    status:
-                      description: TaskStatus defines the observed state of Task
-                      type: object
+                    stage:
+                      description: Stages allow developers to specify stages of concurrent
+                        execution. For example, testing and linting come before an
+                        image build. They can be ran concurrently By default every
+                        task is stage zero.
+                      type: integer
+                  required:
+                  - command
+                  - image
                   type: object
                 type: array
             type: object
