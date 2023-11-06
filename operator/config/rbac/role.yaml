@@ -6,7 +6,7 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - pipelines.lugh.dev
+  - pipelines.bramble.dev
   resources:
   - pipelines
   verbs:
@@ -18,13 +18,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - pipelines.lugh.dev
+  - pipelines.bramble.dev
   resources:
   - pipelines/finalizers
   verbs:
   - update
 - apiGroups:
-  - pipelines.lugh.dev
+  - pipelines.bramble.dev
   resources:
   - pipelines/status
   verbs:
@@ -32,7 +32,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - pipelines.lugh.dev
+  - pipelines.bramble.dev
   resources:
   - tasks
   verbs:
@@ -44,13 +44,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - pipelines.lugh.dev
+  - pipelines.bramble.dev
   resources:
   - tasks/finalizers
   verbs:
   - update
 - apiGroups:
-  - pipelines.lugh.dev
+  - pipelines.bramble.dev
   resources:
   - tasks/status
   verbs:

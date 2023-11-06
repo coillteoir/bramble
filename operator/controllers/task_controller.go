@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"time"
 
-	pipelinesv1alpha1 "github.com/davidlynch-sd/lugh/api/v1alpha1"
+	pipelinesv1alpha1 "github.com/davidlynch-sd/bramble/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -36,9 +36,9 @@ type TaskReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=pipelines.lugh.dev,resources=tasks,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=pipelines.lugh.dev,resources=tasks/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=pipelines.lugh.dev,resources=tasks/finalizers,verbs=update
+//+kubebuilder:rbac:groups=pipelines.bramble.dev,resources=tasks,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=pipelines.bramble.dev,resources=tasks/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=pipelines.bramble.dev,resources=tasks/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.

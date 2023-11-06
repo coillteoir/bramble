@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	pipelinesv1alpha1 "github.com/davidlynch-sd/lugh/api/v1alpha1"
+	pipelinesv1alpha1 "github.com/davidlynch-sd/bramble/api/v1alpha1"
 )
 
 // PipelineReconciler reconciles a Pipeline object
@@ -33,9 +33,9 @@ type PipelineReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=pipelines.lugh.dev,resources=pipelines,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=pipelines.lugh.dev,resources=pipelines/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=pipelines.lugh.dev,resources=pipelines/finalizers,verbs=update
+//+kubebuilder:rbac:groups=pipelines.bramble.dev,resources=pipelines,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=pipelines.bramble.dev,resources=pipelines/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=pipelines.bramble.dev,resources=pipelines/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.

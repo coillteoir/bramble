@@ -1,4 +1,4 @@
-module github.com/davidlynch-sd/lugh
+module github.com/davidlynch-sd/bramble
 
 go 1.19
 
