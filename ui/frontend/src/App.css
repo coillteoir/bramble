@@ -25,3 +25,13 @@
 .read-the-docs {
   color: #888;
 }
+
+.pod {
+  border: white solid 1px;
+  border-radius: 20%;
+  background-color: #0d4a08;
+}
+.pod:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+
