@@ -52,8 +52,10 @@ var getPo = function (ns) { return __awaiter(void 0, void 0, void 0, function ()
             case 0: return [4 /*yield*/, k8sApi.listNamespacedPod(ns)];
             case 1:
                 response = _a.sent();
-                podNames = response.body.items.map(function (pod) { return pod.metadata.name; });
-                console.log(podNames);
+                podNames = response.body.items.map(function (pod) { return ({
+                    name: pod.metadata.name,
+                    image: pod.spec.containers[0].image
+                }); });
                 return [2 /*return*/, podNames];
         }
     });

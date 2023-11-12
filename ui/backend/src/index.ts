@@ -10,8 +10,10 @@ const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
 
 const getPo = async (ns: string) => {
        const response =  await k8sApi.listNamespacedPod(ns)
-       const podNames = response.body.items.map(pod => pod.metadata.name)
-       console.log(podNames)
+       const podNames = response.body.items.map(pod => ({
+           name: pod.metadata.name,
+           image: pod.spec.containers[0].image
+        }))
        return podNames
 };
 
