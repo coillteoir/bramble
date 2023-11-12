@@ -1,0 +1,14 @@
+apiVersion: pipelines.bramble.dev/v1alpha1
+kind: Task
+metadata:
+  labels:
+    app.kubernetes.io/name: task
+    app.kubernetes.io/instance: task-sample
+    app.kubernetes.io/part-of: operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: operator
+  name: task-sample
+spec:
+  image: ubuntu
+  command: ["sh", "-c", "echo good morning"]
+  stage: 0
