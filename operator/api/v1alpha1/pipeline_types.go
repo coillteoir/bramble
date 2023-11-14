@@ -32,7 +32,8 @@ type TaskRef struct {
 type PipelineSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-
+	// Test variable to see if it'll apply
+	Test bool `json:"test,omitempty"`
 	// Foo is an example field of Pipeline. Edit pipeline_types.go to remove/update
 
 	// Allows developers to create a list of tasks

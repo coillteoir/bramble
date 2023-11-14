@@ -53,7 +53,6 @@ type TaskReconciler struct {
 func (r *TaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
-	// TODO(user): your logic here
 	task := &pipelinesv1alpha1.Task{}
 	err := r.Get(ctx, req.NamespacedName, task)
 
@@ -64,8 +63,8 @@ func (r *TaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	r.Create(ctx, &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hello",
-			Namespace: "default",
+			GenerateName: task.ObjectMeta.Name,
+			Namespace:    task.ObjectMeta.Namespace,
 		},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{

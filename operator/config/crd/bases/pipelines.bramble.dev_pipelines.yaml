@@ -70,6 +70,11 @@ spec:
                   - image
                   type: object
                 type: array
+              test:
+                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                  Important: Run "make" to regenerate code after modifying this file
+                  Test variable to see if it''ll apply'
+                type: boolean
             type: object
           status:
             description: PipelineStatus defines the observed state of Pipeline
