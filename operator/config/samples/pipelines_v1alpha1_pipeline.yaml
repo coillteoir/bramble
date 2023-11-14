@@ -16,3 +16,8 @@ spec:
     - -c
     - "lscpu"
     stage: 0 
+  - image: ubuntu
+    command:
+    - sh
+    - c
+    - "file /usr/lib/libc.so"

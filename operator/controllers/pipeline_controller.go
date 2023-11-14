@@ -59,15 +59,15 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	log.Log.WithName("pipeline_logs").
-		Info(fmt.Sprintf("Data: %v", pipeline))
+		Info(fmt.Sprintf("Name: %v", pipeline.ObjectMeta.Name))
 
-	for _, t := range pipeline.Spec.Tasks {
+	for i, taskSpec := range pipeline.Spec.Tasks {
 		r.Create(ctx, &pipelinesv1alpha1.Task{
 			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: pipeline.ObjectMeta.Name + "-",
+				GenerateName: (pipeline.ObjectMeta.Name + "-" + fmt.Sprint(i) + "-"),
 				Namespace:    pipeline.ObjectMeta.Namespace,
 			},
-			Spec: t,
+			Spec: taskSpec,
 		})
 	}
 	return ctrl.Result{RequeueAfter: time.Duration(30 * time.Second)}, nil
