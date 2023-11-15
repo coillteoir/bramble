@@ -15,7 +15,6 @@ spec:
     - sh
     - -c
     - "lscpu"
-    stage: 0 
   - image: ubuntu
     command:
     - sh
