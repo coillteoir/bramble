@@ -24,7 +24,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"time"
+	//	"time"
 
 	pipelinesv1alpha1 "github.com/davidlynch-sd/bramble/api/v1alpha1"
 )
@@ -70,7 +70,7 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			Spec: taskSpec,
 		})
 	}
-	return ctrl.Result{RequeueAfter: time.Duration(30 * time.Second)}, nil
+	return ctrl.Result{ /*RequeueAfter: time.Duration(30 * time.Second)*/ }, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

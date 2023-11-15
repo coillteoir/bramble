@@ -19,5 +19,5 @@ spec:
   - image: ubuntu
     command:
     - sh
-    - c
+    - -c
     - "file /usr/lib/libc.so"

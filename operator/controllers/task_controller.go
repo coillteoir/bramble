@@ -19,7 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"time"
+	//	"time"
 
 	pipelinesv1alpha1 "github.com/davidlynch-sd/bramble/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -77,7 +77,7 @@ func (r *TaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		},
 	})
 
-	return ctrl.Result{RequeueAfter: time.Duration(30 * time.Second)}, nil
+	return ctrl.Result{ /*RequeueAfter: time.Duration(30 * time.Second)*/ }, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
