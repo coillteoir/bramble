@@ -35,10 +35,9 @@ type TaskSpec struct {
 	// can be used to determine the behaviour of a CLI app.
 	Command []string `json:"command"`
 
-	// Stages allow developers to specify stages of concurrent execution.
-	// For example, testing and linting come before an image build. They can be ran concurrently
-	// By default every task is stage zero.
-	Stage int `json:"stage,omitempty"`
+	//Dependencies allow developers to specify which tasks come before one another.
+	//Dependencies should in theory be able to run in parallel.
+	Dependencies []string `json:"dependencies,omitempty"`
 }
 
 // TaskStatus defines the observed state of Task
