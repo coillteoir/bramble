@@ -1,21 +1,34 @@
 import express, { Express, Request, Response } from 'express'
 import cors from 'cors'
+import {Pod} from 'kubernetes-types/core/v1'
 
-const k8s = require('@kubernetes/client-node');
+const k8s = require('@kubernetes/client-node')
 
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
 
 const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
+const k8sCRDApi = kc.makeApiClient(k8s.CustomObjectsApi)
 
 const getPo = async (ns: string) => {
        const response =  await k8sApi.listNamespacedPod(ns)
-       const podNames = response.body.items.map(pod => ({
-           name: pod.metadata.name,
-           image: pod.spec.containers[0].image
+       const podNames = response.body.items.map((pod: Pod) => ({
+           name: pod?.metadata?.name,
+           image: pod?.spec?.containers[0].image
         }))
        return podNames
 };
+
+const getPL = async (ns: string) => {
+    console.log(k8sCRDApi.listNamespacedCustomObject(
+        'pipelines.bramble.dev',
+        'v1',
+        ns,
+        'pipelines'
+    ).body)
+}
+
+getPL('default')
 
 const app: Express = express()
 
