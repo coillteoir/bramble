@@ -12,7 +12,7 @@ const k8sCRDApi = kc.makeApiClient(k8s.CustomObjectsApi)
 
 const getPo = async (ns: string) => {
        const response =  await k8sApi.listNamespacedPod(ns)
-       const podNames = response.body.items.map((pod: Pod) => ({
+       const podNames = response.body.items.map((pod : Pod) => ({
            name: pod?.metadata?.name,
            image: pod?.spec?.containers[0].image
         }))
@@ -20,12 +20,12 @@ const getPo = async (ns: string) => {
 };
 
 const getPL = async (ns: string) => {
-    console.log(k8sCRDApi.listNamespacedCustomObject(
+    await k8sCRDApi.listNamespacedCustomObject(
         'pipelines.bramble.dev',
-        'v1',
+        'v1alpha1',
         ns,
         'pipelines'
-    ).body)
+    ).then((obj:any) => console.log(obj.body.items))
 }
 
 getPL('default')

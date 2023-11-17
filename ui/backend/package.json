@@ -1,7 +1,8 @@
 {
  "scripts": {
   "build": "tsc",
-  "lint": "eslint . --ext .ts"
+  "lint": "eslint . --ext .ts",
+  "release":"eslint . --ext .ts && tsc -p tsconfig_release.json"
  },
  "dependencies": {
   "@kubernetes/client-node": "^0.20.0",
