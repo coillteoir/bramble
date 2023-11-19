@@ -24,21 +24,24 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 type TaskRef struct {
-	Name  string `json:"name,omitempty"`
-	Stage int    `json:"stage,omitempty"`
+	Name  string `json:"name"`
+	Dependencies []string    `json:"dependencies,omitempty"`
+}
+
+type PLTask struct {
+    // Name of task to be ran
+    Name string `json:"name"`
+    // Spec of given task
+    Spec TaskSpec `json:"spec"`
+    // Tasks to be ran before `
+    Dependencies []string `json:"dependencies,omitempty"`
 }
 
 // PipelineSpec defines the desired state of Pipeline
 type PipelineSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-	// Test variable to see if it'll apply
-	Test bool `json:"test,omitempty"`
-	// Foo is an example field of Pipeline. Edit pipeline_types.go to remove/update
-
 	// Allows developers to create a list of tasks
-	Tasks []TaskSpec `json:"tasks,omitempty"`
-	// Allows developers to use pre applied tasks to the cluster
+	Tasks []PLTask `json:"tasks,omitempty"`
+	// Allows developers to use pre applied tasks in the same namespace
 	TaskRefs []TaskRef `json:"taskRefs,omitempty"`
 }
 

@@ -20,15 +20,20 @@ const getPo = async (ns: string) => {
 };
 
 const getPL = async (ns: string) => {
-    await k8sCRDApi.listNamespacedCustomObject(
+    const response =  await k8sCRDApi.listNamespacedCustomObject(
         'pipelines.bramble.dev',
         'v1alpha1',
         ns,
         'pipelines'
-    ).then((obj:any) => console.log(obj.body.items))
+    )
+    const pls = response.body.items.map((pl : any) => ({
+        name: pl?.metadata?.name,
+        tasks: pl?.spec?.tasks
+    }))
+    return pls
 }
 
-getPL('default')
+console.log(getPL('default'))
 
 const app: Express = express()
 
@@ -39,7 +44,7 @@ app.use(express.json())
 
 app.get('/', async (req: Request, res: Response) => {
     try {
-        const podNames = await getPo('default')
+        const podNames = await getPL('default')
         res.json(podNames)
     } catch (error) {
         res.status(500).json({error: "internal server error (womp womp)"})
