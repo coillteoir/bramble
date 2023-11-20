@@ -1,20 +1,36 @@
-interface TaskSpec {
+export class TaskSpec {
     image: string
     command: string[]
+
+    constructor(image: string, command: string[]){
+        this.image = image
+        this.command = command
+    }
 }
 
-interface PLtask {
+export class PLtask {
     name: string
     spec: TaskSpec
-    dependencies: string[]
+    dependencies?: string[]
+    
+    constructor(name: string, spec: TaskSpec, dependencies?: string[]){
+        this.name = name
+        this.spec = spec
+        this.dependencies = dependencies
+    }
 }
 
-interface TaskRef {
+export class TaskRef {
     name: string
-    dependencies: string[]
+    dependencies?: string[]
+    
+    constructor(name: string, dependencies?: string[]){
+        this.name = name
+        this.dependencies = dependencies
+    }
 }
 
-export interface Pipeline {
+export class Pipeline {
     metadata: {
         name: string
         namespace: string
@@ -22,5 +38,17 @@ export interface Pipeline {
     spec: {
        tasks: PLtask[] 
        taskRefs: TaskRef[]
+    }
+
+    constructor(metadata: {
+        name: string,
+        namespace: string
+    }, spec: {
+        tasks?: PLtask[]
+        taskRefs?: TaskRef[]
+    })
+    {
+        this.metadata = metadata
+        this.spec = spec
     }
 }
