@@ -10,13 +10,16 @@ metadata:
   name: pipeline-sample
 spec:
   tasks:
-  - image: ubuntu
-    command:
-    - sh
-    - -c
-    - "lscpu"
-  - image: ubuntu
-    command:
-    - sh
-    - -c
-    - "file /usr/lib/libc.so"
+  - name: hello
+    spec:
+      image: ubuntu
+      command: ["sh", "-c", "echo hello world"]
+  - name: build
+    spec:
+      image: golang:latest
+      command: ["GOOS=linux", "GOARCH=amd64", "go", "build", "-o", "main"]
+    dependencies: ["hello"]
+  taskRefs:
+  - name: test01
+    dependencies: ["build"]
+    
