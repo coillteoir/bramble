@@ -23,7 +23,6 @@ export class PLtask {
 export class TaskRef {
   name: string;
   dependencies?: string[];
-
   constructor(name: string, dependencies?: string[]) {
     this.name = name;
     this.dependencies = dependencies;
@@ -36,8 +35,8 @@ export class Pipeline {
     namespace: string;
   };
   spec: {
-    tasks: PLtask[];
-    taskRefs: TaskRef[];
+    tasks?: PLtask[];
+    taskRefs?: TaskRef[];
   };
 
   constructor(

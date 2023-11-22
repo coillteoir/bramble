@@ -3,54 +3,49 @@ import "./App.css";
 import * as bramble_types from "./bramble_types";
 
 function App() {
-  const [pipelines, setData] = createSignal<[bramble_types.Pipeline]>([]);
+  const [pipelines, setData] = createSignal<bramble_types.Pipeline[]>(
+    new Array<bramble_types.Pipeline>(),
+  );
   const fetchData = async () => {
     try {
       await fetch("http://localhost:5555/")
         .then((response) => response.json())
-        .then((jsonData) => console.log(jsonData));
+        .then((jsonData) =>
+          setData(
+            jsonData.map(
+              (pipeline: bramble_types.Pipeline) =>
+                new bramble_types.Pipeline(pipeline.metadata, pipeline.spec),
+            ),
+          ),
+        );
     } catch (error) {
       console.error(error);
     }
   };
-  setData([
-    new bramble_types.Pipeline(
-      { name: "test", namespace: "bramble" },
-      {
-        tasks: [
-          new bramble_types.PLtask(
-            "task01",
-            new bramble_types.TaskSpec("ubuntu", [
-              "sh",
-              "-c",
-              "echo hello world",
-            ]),
-            ["goodbye", "cheesy"],
-          ),
-        ],
-      },
-    ),
-  ]);
 
   return (
     <>
-      {pipelines().map((pl?) => (
+      {pipelines().map((pl?: bramble_types.Pipeline) => (
         <div class="pipeline container bg-info">
           {
             <>
-              <h2>Name: {pl.metadata.name}</h2>
-              <h3>Namespace: {pl.metadata.namespace}</h3>
+              <h2>Name: {pl?.metadata.name}</h2>
+              <h3>Namespace: {pl?.metadata.namespace}</h3>
               <h2>Tasks</h2>
               <ul>
-                {pl.spec.tasks.map((task) => (
+                {pl?.spec.tasks?.map((task: bramble_types.PLtask) => (
                   <div class="task bg-primary">
                     <h2>{task.name}</h2>
-                    <h3>Dependencies</h3>
-                    <ul>
-                      {task.dependencies.map((dep) => (
-                        <li>{dep}</li>
-                      ))}
-                    </ul>
+                    {task.dependencies && (
+                      <>
+                        <h3>Dependencies</h3>
+                        <ul>
+                          {task?.dependencies?.map((dep: string) => (
+                            <li>{dep}</li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
                   </div>
                 ))}
               </ul>
