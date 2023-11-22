@@ -26,12 +26,11 @@ export const getPL = async (ns: string): Promise<bramble_types.Pipeline[]> => {
     "pipelines",
   );
   const pls: bramble_types.Pipeline[] = response?.body?.items.map((pl: any) => {
-    console.log(pl)
-    new bramble_types.Pipeline(
+    return new bramble_types.Pipeline(
       { name: pl.metadata.name, namespace: ns },
       {
         tasks: pl.spec.tasks.map((task: any) => {
-          new bramble_types.PLtask(task.name, task.spec, task?.dependencies);
+          return new bramble_types.PLtask(task.name, task.spec, task?.dependencies);
         }),
       },
     );
