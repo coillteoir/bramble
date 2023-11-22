@@ -27,8 +27,8 @@
 }
 
 .pipeline {
-    border: solid white;
+  border: solid white;
 }
 .task {
-    border: solid green;
+  border: solid green;
 }

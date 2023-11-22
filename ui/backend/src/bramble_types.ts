@@ -1,26 +1,59 @@
-interface TaskSpec {
-    image: string
-    command: string[]
+export class TaskSpec {
+  image: string;
+  command: string[];
+
+  constructor(image: string, command: string[]) {
+    this.image = image;
+    this.command = command;
+    console.log("TaskSpec: ", this);
+  }
 }
 
-interface PLtask {
-    name: string
-    spec: TaskSpec
-    dependencies: string[]
+export class PLtask {
+  name: string;
+  spec: TaskSpec;
+  dependencies?: string[];
+
+  constructor(name: string, spec: TaskSpec, dependencies?: string[]) {
+    this.name = name;
+    this.spec = spec;
+    this.dependencies = dependencies;
+    console.log("PLtask: ", this);
+  }
 }
 
-interface TaskRef {
-    name: string
-    dependencies: string[]
+export class TaskRef {
+  name: string;
+  dependencies?: string[];
+  constructor(name: string, dependencies?: string[]) {
+    this.name = name;
+    this.dependencies = dependencies;
+    console.log("TaskRef :", this);
+  }
 }
 
-export interface Pipeline {
+export class Pipeline {
+  metadata: {
+    name: string;
+    namespace: string;
+  };
+  spec: {
+    tasks?: PLtask[];
+    taskRefs?: TaskRef[];
+  };
+
+  constructor(
     metadata: {
-        name: string
-        namespace: string
-    }
+      name: string;
+      namespace: string;
+    },
     spec: {
-       tasks: PLtask[] 
-       taskRefs: TaskRef[]
-    }
+      tasks?: PLtask[];
+      taskRefs?: TaskRef[];
+    },
+  ) {
+    this.metadata = metadata;
+    this.spec = spec;
+    console.log(this);
+  }
 }
