@@ -28,14 +28,22 @@ type ExecutionSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Execution. Edit execution_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// Reference to the pipeline which will be executed
+	Pipeline string `json:"pipeline"`
+	// Git repo hosting the code to be tested against pipeline
+	Repo string `json:"repo"`
 }
 
 // ExecutionStatus defines the observed state of Execution
 type ExecutionStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Describes which strings are currently running
+	Executing []string `json:"executing"`
+	// States if the pipeline is completed
+	Completed bool `json:"completed"`
+	// Tasks which have already completed
+	CompletedTasks []string `json:"completedTasks"`
+	// States if the pipeline has failed at any point
+	Error bool `json:"error"`
 }
 
 //+kubebuilder:object:root=true

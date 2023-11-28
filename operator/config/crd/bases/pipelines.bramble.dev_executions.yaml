@@ -35,13 +35,40 @@ spec:
           spec:
             description: ExecutionSpec defines the desired state of Execution
             properties:
-              foo:
-                description: Foo is an example field of Execution. Edit execution_types.go
-                  to remove/update
+              pipeline:
+                description: Reference to the pipeline which will be executed
                 type: string
+              repo:
+                description: Git repo hosting the code to be tested against pipeline
+                type: string
+            required:
+            - pipeline
+            - repo
             type: object
           status:
             description: ExecutionStatus defines the observed state of Execution
+            properties:
+              completed:
+                description: States if the pipeline is completed
+                type: boolean
+              completedTasks:
+                description: Tasks which have already completed
+                items:
+                  type: string
+                type: array
+              error:
+                description: States if the pipeline has failed at any point
+                type: boolean
+              executing:
+                description: Describes which strings are currently running
+                items:
+                  type: string
+                type: array
+            required:
+            - completed
+            - completedTasks
+            - error
+            - executing
             type: object
         type: object
     served: true
