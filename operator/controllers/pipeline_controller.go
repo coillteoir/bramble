@@ -18,11 +18,13 @@ package controllers
 
 import (
 	"context"
-
+	"fmt"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	//	"time"
 
 	pipelinesv1alpha1 "github.com/davidlynch-sd/bramble/api/v1alpha1"
 )
@@ -49,9 +51,29 @@ type PipelineReconciler struct {
 func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	pipeline := &pipelinesv1alpha1.Pipeline{}
+	err := r.Get(ctx, req.NamespacedName, pipeline)
 
-	return ctrl.Result{}, nil
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	log.Log.WithName("pipeline_logs").
+		Info(fmt.Sprintf("Name: %v", pipeline.ObjectMeta.Name))
+
+	for i, taskSpec := range pipeline.Spec.Tasks {
+		err = r.Create(ctx, &pipelinesv1alpha1.Task{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: (pipeline.ObjectMeta.Name + "-" + fmt.Sprint(i) + "-"),
+				Namespace:    pipeline.ObjectMeta.Namespace,
+			},
+			Spec: taskSpec,
+		})
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+	return ctrl.Result{ /*RequeueAfter: time.Duration(30 * time.Second)*/ }, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

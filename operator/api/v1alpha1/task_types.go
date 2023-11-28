@@ -20,9 +20,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // TaskSpec defines the desired state of Task
 type TaskSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -34,11 +31,6 @@ type TaskSpec struct {
 	// Command executed by the container,
 	// can be used to determine the behaviour of a CLI app.
 	Command []string `json:"command"`
-
-	// Stages allow developers to specify stages of concurrent execution.
-	// For example, testing and linting come before an image build. They can be ran concurrently
-	// By default every task is stage zero.
-	Stage int `json:"stage,omitempty"`
 }
 
 // TaskStatus defines the observed state of Task
