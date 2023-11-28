@@ -25,10 +25,32 @@
 .read-the-docs {
   color: #888;
 }
-
+/* Style for pipelines */
 .pipeline {
-  border: solid white;
+  color: black;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 10px;
+  margin-bottom: 20px;
 }
+
+/* Style for tasks */
 .task {
-  border: solid green;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+/* Add some spacing between tasks within a pipeline */
+.pipeline .task {
+  color: black;
+  margin-right: 8px;
+}
+
+/* Optional: Add hover effect for tasks */
+.task:hover {
+  background-color: #f5f5f5;
 }

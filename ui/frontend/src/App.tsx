@@ -26,7 +26,7 @@ function App() {
   return (
     <>
       {pipelines().map((pl?: bramble_types.Pipeline) => (
-        <div class="pipeline container bg-info">
+        <div class="pipeline">
           {
             <>
               <h2>Name: {pl?.metadata.name}</h2>
@@ -34,7 +34,7 @@ function App() {
               <h2>Tasks</h2>
               <ul>
                 {pl?.spec.tasks?.map((task: bramble_types.PLtask) => (
-                  <div class="task bg-primary">
+                  <div class="task">
                     <h2>{task.name}</h2>
                     {task.dependencies && (
                       <>
