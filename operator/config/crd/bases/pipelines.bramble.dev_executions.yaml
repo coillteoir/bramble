@@ -35,6 +35,9 @@ spec:
           spec:
             description: ExecutionSpec defines the desired state of Execution
             properties:
+              branch:
+                description: Git branch
+                type: string
               pipeline:
                 description: Reference to the pipeline which will be executed
                 type: string
@@ -42,6 +45,7 @@ spec:
                 description: Git repo hosting the code to be tested against pipeline
                 type: string
             required:
+            - branch
             - pipeline
             - repo
             type: object
