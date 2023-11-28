@@ -1,7 +1,0 @@
-mode: set
-github.com/davidlynch-sd/bramble/controllers/pipeline_controller.go:49.100,55.2 2 0
-github.com/davidlynch-sd/bramble/controllers/pipeline_controller.go:58.71,62.2 1 0
-github.com/davidlynch-sd/bramble/controllers/task_controller.go:53.96,60.16 4 0
-github.com/davidlynch-sd/bramble/controllers/task_controller.go:60.16,62.3 1 0
-github.com/davidlynch-sd/bramble/controllers/task_controller.go:63.2,81.72 3 0
-github.com/davidlynch-sd/bramble/controllers/task_controller.go:85.67,89.2 1 0

@@ -19,12 +19,13 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"time"
+	//	"time"
 
 	pipelinesv1alpha1 "github.com/davidlynch-sd/bramble/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	types "k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -53,7 +54,6 @@ type TaskReconciler struct {
 func (r *TaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
-	// TODO(user): your logic here
 	task := &pipelinesv1alpha1.Task{}
 	err := r.Get(ctx, req.NamespacedName, task)
 
@@ -62,12 +62,11 @@ func (r *TaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 	log.Log.WithName("task_logs").Info(fmt.Sprintf("Image: %v Command: %v", task.Spec.Image, task.Spec.Command))
 
-	r.Create(ctx, &corev1.Pod{
+	err = r.Create(ctx, &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hello",
-			Namespace: "default",
-		},
-		Spec: corev1.PodSpec{
+			GenerateName: task.ObjectMeta.Name,
+			Namespace:    task.ObjectMeta.Namespace,
+		}, Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
 					Name:    task.Spec.Image,
@@ -77,8 +76,29 @@ func (r *TaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			},
 		},
 	})
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
-	return ctrl.Result{RequeueAfter: time.Duration(30 * time.Second)}, nil
+	for _, dep := range task.Spec.Dependencies {
+		log.Log.WithName("task_logs_dependencies").Info(dep)
+		log.Log.WithName("request_name").Info(fmt.Sprintf("%v", req.NamespacedName))
+
+		depTask := &pipelinesv1alpha1.Task{}
+		err = r.Get(
+			ctx,
+			types.NamespacedName{
+				Namespace: task.ObjectMeta.Namespace,
+				Name:      dep,
+			},
+			depTask)
+		if err != nil {
+			log.Log.WithName("ERROR").Error(err, "Dependency not found")
+			return ctrl.Result{}, err
+		}
+		log.Log.WithName("dependency_log").Info(fmt.Sprintf("%v", depTask.ObjectMeta.Name))
+	}
+	return ctrl.Result{ /*RequeueAfter: time.Duration(30 * time.Second)*/ }, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

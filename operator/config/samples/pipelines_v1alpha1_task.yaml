@@ -11,4 +11,6 @@ metadata:
 spec:
   image: ubuntu
   command: ["sh", "-c", "echo good morning"]
-  stage: 0
+  dependencies:
+  - hello
+  - world

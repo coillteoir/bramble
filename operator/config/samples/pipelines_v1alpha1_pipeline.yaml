@@ -9,14 +9,17 @@ metadata:
     app.kubernetes.io/created-by: operator
   name: pipeline-sample
 spec:
-  # TODO(user): Add fields here
   tasks:
-    - contianer: alpine
-      commands: ["sh", "-c", "good evening"]
-      stage: 0
-    - container: pytorch
-      commands: ["ml stuff"]
-      stage: 0
+  - name: hello
+    spec:
+      image: ubuntu
+      command: ["sh", "-c", "echo hello world"]
+  - name: build
+    spec:
+      image: golang:latest
+      command: ["GOOS=linux", "GOARCH=amd64", "go", "build", "-o", "main"]
+    dependencies: ["hello"]
   taskRefs:
-    - task-sample
-    - 1
+  - name: test01
+    dependencies: ["build"]
+    
