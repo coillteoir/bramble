@@ -8,6 +8,32 @@ rules:
 - apiGroups:
   - pipelines.bramble.dev
   resources:
+  - executions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - pipelines.bramble.dev
+  resources:
+  - executions/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - pipelines.bramble.dev
+  resources:
+  - executions/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - pipelines.bramble.dev
+  resources:
   - pipelines
   verbs:
   - create
