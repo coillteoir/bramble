@@ -61,13 +61,13 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	log.Log.WithName("pipeline_logs").
 		Info(fmt.Sprintf("Name: %v", pipeline.ObjectMeta.Name))
 
-	for i, taskSpec := range pipeline.Spec.Tasks {
+	for i, task := range pipeline.Spec.Tasks {
 		err = r.Create(ctx, &pipelinesv1alpha1.Task{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: (pipeline.ObjectMeta.Name + "-" + fmt.Sprint(i) + "-"),
 				Namespace:    pipeline.ObjectMeta.Namespace,
 			},
-			Spec: taskSpec,
+			Spec: task.Spec,
 		})
 		if err != nil {
 			return ctrl.Result{}, err

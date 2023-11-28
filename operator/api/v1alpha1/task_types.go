@@ -31,6 +31,8 @@ type TaskSpec struct {
 	// Command executed by the container,
 	// can be used to determine the behaviour of a CLI app.
 	Command []string `json:"command"`
+
+	Dependencies []string `json:"dependencies,omitempty"`
 }
 
 // TaskStatus defines the observed state of Task

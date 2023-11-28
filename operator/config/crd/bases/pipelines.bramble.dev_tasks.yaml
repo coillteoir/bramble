@@ -41,6 +41,10 @@ spec:
                 items:
                   type: string
                 type: array
+              dependencies:
+                items:
+                  type: string
+                type: array
               image:
                 description: Docker image which will be used.
                 type: string

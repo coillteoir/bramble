@@ -24,17 +24,17 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 type TaskRef struct {
-	Name  string `json:"name"`
-	Dependencies []string    `json:"dependencies,omitempty"`
+	Name         string   `json:"name"`
+	Dependencies []string `json:"dependencies,omitempty"`
 }
 
 type PLTask struct {
-    // Name of task to be ran
-    Name string `json:"name"`
-    // Spec of given task
-    Spec TaskSpec `json:"spec"`
-    // Tasks to be ran before `
-    Dependencies []string `json:"dependencies,omitempty"`
+	// Name of task to be ran
+	Name string `json:"name"`
+	// Spec of given task
+	Spec TaskSpec `json:"spec"`
+	// Tasks to be ran before `
+	Dependencies []string `json:"dependencies,omitempty"`
 }
 
 // PipelineSpec defines the desired state of Pipeline
