@@ -9,4 +9,6 @@ metadata:
     app.kubernetes.io/created-by: operator
   name: execution-sample
 spec:
-  # TODO(user): Add fields here
+  pipeline: build
+  repo: github.com/coillteoir/bramble
+  branch: develop

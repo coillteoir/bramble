@@ -18,7 +18,7 @@ package controllers
 
 import (
 	"context"
-
+	"fmt"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -50,6 +50,14 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	_ = log.FromContext(ctx)
 
 	// TODO(user): your logic here
+	execution := &pipelinesv1alpha1.Execution{}
+	err := r.Get(ctx, req.NamespacedName, execution)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	log.Log.WithName("execution logs").
+		Info(fmt.Sprintf("Name: %v", execution.ObjectMeta.Name))
 
 	return ctrl.Result{}, nil
 }

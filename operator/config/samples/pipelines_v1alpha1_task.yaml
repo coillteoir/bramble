@@ -7,10 +7,7 @@ metadata:
     app.kubernetes.io/part-of: operator
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: operator
-  name: task-sample
+  name: docker-build
 spec:
-  image: ubuntu
+  image: docker
   command: ["sh", "-c", "echo good morning"]
-  dependencies:
-  - hello
-  - world
