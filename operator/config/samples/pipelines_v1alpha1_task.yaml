@@ -10,4 +10,9 @@ metadata:
   name: docker-build
 spec:
   image: docker
-  command: ["sh", "-c", "echo good morning"]
+  command:
+  - docker
+  - build
+  - -t
+  - davidlynchsd/bramble
+  - src/

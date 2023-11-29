@@ -10,5 +10,5 @@ metadata:
   name: execution-sample
 spec:
   pipeline: build
-  repo: github.com/coillteoir/bramble
+  repo: https://github.com/coillteoir/bramble
   branch: develop
