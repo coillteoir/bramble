@@ -8,8 +8,9 @@ const port: number = 5555;
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static("public"))
 
-app.get("/", async (req: Request, res: Response) => {
+app.get("/pipelines", async (req: Request, res: Response) => {
   try {
     const Pipelines = await getPL("default");
     console.log(Pipelines);

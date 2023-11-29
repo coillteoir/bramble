@@ -8,7 +8,7 @@ function App() {
   );
   const fetchData = async () => {
     try {
-      await fetch("http://localhost:5555/")
+      await fetch("http://localhost:5555/pipelines")
         .then((response) => response.json())
         .then((jsonData) =>
           setData(
