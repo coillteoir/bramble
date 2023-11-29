@@ -73,7 +73,7 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	pv := &corev1.PersistentVolume{
 		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "pv-" + execution.ObjectMeta.Name,
+			GenerateName: execution.ObjectMeta.Name + "-pv",
 		},
 		Spec: corev1.PersistentVolumeSpec{
 			Capacity: corev1.ResourceList{
@@ -85,7 +85,7 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			StorageClassName: "standard",
 			PersistentVolumeSource: corev1.PersistentVolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
-					Path: "/src/",
+					Path: "/src",
 				},
 			},
 		},
@@ -98,7 +98,7 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	pvc := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      pv.ObjectMeta.Name + "pvc",
+			Name:      pv.ObjectMeta.Name + "-pvc",
 			Namespace: execution.ObjectMeta.Namespace,
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
@@ -120,15 +120,31 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	clonePod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: execution.ObjectMeta.Name + "cloner",
-			Namespace:    execution.ObjectMeta.Namespace,
+			Name:      execution.ObjectMeta.Name + "-cloner",
+			Namespace: execution.ObjectMeta.Namespace,
 		},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
 					Name:    "cloner",
 					Image:   "alpine/git",
-					Command: []string{"git", "clone", execution.Spec.Repo, "/src/"},
+					Command: []string{"git", "clone", execution.Spec.Repo, "/src/" + execution.Spec.CloneDir},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "cloner-volume",
+							MountPath: "/src/",
+						},
+					},
+				},
+			},
+			Volumes: []corev1.Volume{
+				{
+					Name: "cloner-volume",
+					VolumeSource: corev1.VolumeSource{
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+							ClaimName: pvc.ObjectMeta.Name,
+						},
+					},
 				},
 			},
 		},
