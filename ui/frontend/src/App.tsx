@@ -1,21 +1,19 @@
 import { createSignal } from "solid-js";
 import "./App.css";
-import * as bramble_types from "./bramble_types";
+import { PipelineView } from "./PipelineView.tsx";
+import { Pipeline, PLtask } from "./bramble_types";
 
 function App() {
-  const [pipelines, setData] = createSignal<bramble_types.Pipeline[]>(
-    new Array<bramble_types.Pipeline>(),
-  );
+  const [pipelines, setData] = createSignal<Pipeline[]>(new Array<Pipeline>());
   const fetchData = async () => {
     try {
       await fetch("http://localhost:5555/pipelines")
         .then((response) => response.json())
         .then((jsonData) => {
-          console.log(jsonData);
           setData(
             jsonData.map(
-              (pipeline: bramble_types.Pipeline) =>
-                new bramble_types.Pipeline(pipeline.metadata, pipeline.spec),
+              (pipeline: Pipeline) =>
+                new Pipeline(pipeline.metadata, pipeline.spec),
             ),
           );
         });
@@ -26,15 +24,16 @@ function App() {
 
   return (
     <>
-      {pipelines().map((pl?: bramble_types.Pipeline) => (
+      <h1>{pipelines()[0]?.metadata.namespace}</h1>
+      {pipelines().map((pl?: Pipeline) => (
         <div class="pipeline">
           {
             <>
+              <PipelineView pipeline={pl} />
               <h2>Name: {pl?.metadata.name}</h2>
-              <h3>Namespace: {pl?.metadata.namespace}</h3>
               <h2>Tasks</h2>
               <ul>
-                {pl?.spec.tasks?.map((task: bramble_types.PLtask) => (
+                {pl?.spec.tasks?.map((task: PLtask) => (
                   <div class="task">
                     <h2>{task.name}</h2>
                     {task.dependencies && (
