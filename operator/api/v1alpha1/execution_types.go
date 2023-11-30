@@ -20,9 +20,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // ExecutionSpec defines the desired state of Execution
 type ExecutionSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -39,14 +36,19 @@ type ExecutionSpec struct {
 
 // ExecutionStatus defines the observed state of Execution
 type ExecutionStatus struct {
-	// Describes which strings are currently running
-	Executing []string `json:"executing"`
+	// Shows if the PV for this execution has been provisioned
+	VolumeProvisioned bool `json:"volumeProvisioned,omitempty" default:"false"`
+	// Tells the controller if the repo is cloned
+	RepoCloned bool `json:"repoCloned,omitempty" default:"false"`
+
+	// Describes which tasks are currently running
+	Executing []string `json:"executing,omitempty"`
 	// States if the pipeline is completed
-	Completed bool `json:"completed"`
+	Completed bool `json:"completed,omitempty" default:"false"`
 	// Tasks which have already completed
-	CompletedTasks []string `json:"completedTasks"`
+	CompletedTasks []string `json:"completedTasks,omitempty"`
 	// States if the pipeline has failed at any point
-	Error bool `json:"error"`
+	Error bool `json:"error" default:"false"`
 }
 
 //+kubebuilder:object:root=true

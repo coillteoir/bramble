@@ -29,3 +29,4 @@ rules:
   - executions/status
   verbs:
   - get
+  - update

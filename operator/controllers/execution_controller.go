@@ -28,6 +28,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"time"
 )
 
 // ExecutionReconciler reconciles a Execution object
@@ -71,91 +72,113 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	log.Log.WithName("execution logs").
 		Info(fmt.Sprintf("Name: %v", execution.ObjectMeta.Name))
 
-	pv := &corev1.PersistentVolume{
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: execution.ObjectMeta.Name + "-pv",
-		},
-		Spec: corev1.PersistentVolumeSpec{
-			Capacity: corev1.ResourceList{
-				corev1.ResourceStorage: resource.MustParse("1Gi"),
+	var pv *corev1.PersistentVolume
+	var pvc *corev1.PersistentVolumeClaim
+	if !execution.Status.VolumeProvisioned {
+		log.Log.WithName("execution logs").Info("Provisioning PV")
+		pv = &corev1.PersistentVolume{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: execution.ObjectMeta.Name + "-pv",
 			},
-			AccessModes: []corev1.PersistentVolumeAccessMode{
-				corev1.ReadWriteOnce,
-			},
-			StorageClassName: "standard",
-			PersistentVolumeSource: corev1.PersistentVolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: "/src",
-				},
-			},
-		},
-	}
-
-	err = r.Create(ctx, pv)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	pvc := &corev1.PersistentVolumeClaim{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      pv.ObjectMeta.Name + "-pvc",
-			Namespace: execution.ObjectMeta.Namespace,
-		},
-		Spec: corev1.PersistentVolumeClaimSpec{
-			AccessModes: []corev1.PersistentVolumeAccessMode{
-				corev1.ReadWriteOnce,
-			},
-			Resources: corev1.ResourceRequirements{
-				Requests: corev1.ResourceList{
+			Spec: corev1.PersistentVolumeSpec{
+				Capacity: corev1.ResourceList{
 					corev1.ResourceStorage: resource.MustParse("1Gi"),
 				},
+				AccessModes: []corev1.PersistentVolumeAccessMode{
+					corev1.ReadWriteOnce,
+				},
+				StorageClassName: "standard",
+				PersistentVolumeSource: corev1.PersistentVolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: "/src",
+					},
+				},
 			},
-		},
-	}
+		}
 
-	err = r.Create(ctx, pvc)
+		err = r.Create(ctx, pv)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		log.Log.WithName("execution logs").
+			Info(fmt.Sprintf("PV %v created", execution.ObjectMeta.Name))
+
+		log.Log.WithName("execution logs").Info("Provisioning PVC")
+		pvc = &corev1.PersistentVolumeClaim{
+
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      pv.ObjectMeta.Name + "-pvc",
+				Namespace: execution.ObjectMeta.Namespace,
+			},
+			Spec: corev1.PersistentVolumeClaimSpec{
+				AccessModes: []corev1.PersistentVolumeAccessMode{
+					corev1.ReadWriteOnce,
+				},
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceStorage: resource.MustParse("1Gi"),
+					},
+				},
+			},
+		}
+		execution.Status.VolumeProvisioned = true
+
+		err = r.Create(ctx, pvc)
+	}
 	if err != nil {
 		return ctrl.Result{}, err
 	}
+	var clonePod *corev1.Pod
+	if !execution.Status.RepoCloned {
+		log.Log.WithName("execution_logs").Info("Provisioning Cloner Pod")
 
-	clonePod := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      execution.ObjectMeta.Name + "-cloner",
-			Namespace: execution.ObjectMeta.Namespace,
-		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:    "cloner",
-					Image:   "alpine/git",
-					Command: []string{"git", "clone", execution.Spec.Repo, "/src/" + execution.Spec.CloneDir},
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      "cloner-volume",
-							MountPath: "/src/",
+		clonePod = &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      execution.ObjectMeta.Name + "-cloner",
+				Namespace: execution.ObjectMeta.Namespace,
+			},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{
+						Name:    "cloner",
+						Image:   "alpine/git",
+						Command: []string{"git", "clone", execution.Spec.Repo, execution.Spec.CloneDir},
+						VolumeMounts: []corev1.VolumeMount{
+							{
+								Name:      "cloner-volume",
+								MountPath: "/src/",
+							},
+						},
+					},
+				},
+
+				Volumes: []corev1.Volume{
+					{
+						Name: "cloner-volume",
+						VolumeSource: corev1.VolumeSource{
+							PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+								ClaimName: pvc.ObjectMeta.Name,
+							},
 						},
 					},
 				},
 			},
-			Volumes: []corev1.Volume{
-				{
-					Name: "cloner-volume",
-					VolumeSource: corev1.VolumeSource{
-						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-							ClaimName: pvc.ObjectMeta.Name,
-						},
-					},
-				},
-			},
-		},
-	}
+		}
 
-	err = r.Create(ctx, clonePod)
+		err = r.Create(ctx, clonePod)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		execution.Status.RepoCloned = true
+		log.Log.WithName("execution_logs").Info("Cloner Pod provisioned")
+	}
+	err = r.Status().Update(ctx, execution)
 	if err != nil {
+		log.Log.WithName("execution_logs").Error(err, "Couldn't update execution")
 		return ctrl.Result{}, err
 	}
 
-	return ctrl.Result{}, nil
+	return ctrl.Result{RequeueAfter: time.Duration(30 * time.Second)}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
