@@ -75,6 +75,24 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	var pv *corev1.PersistentVolume
 	var pvc *corev1.PersistentVolumeClaim
+	var clonePod *corev1.Pod
+
+	err = initExecution(ctx, r, execution, pv, pvc, clonePod)
+
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	err = r.Status().Update(ctx, execution)
+	if err != nil {
+		log.Log.WithName("execution_logs").Error(err, "Couldn't update execution")
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{RequeueAfter: time.Duration(30 * time.Second)}, nil
+}
+
+func initExecution(ctx context.Context, r *ExecutionReconciler, execution *pipelinesv1alpha1.Execution, pv *corev1.PersistentVolume, pvc *corev1.PersistentVolumeClaim, clonePod *corev1.Pod) error {
 	if !execution.Status.VolumeProvisioned {
 		log.Log.WithName("execution logs").Info("Provisioning PV")
 		pv = &corev1.PersistentVolume{
@@ -97,9 +115,9 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			},
 		}
 
-		err = r.Create(ctx, pv)
+		err := r.Create(ctx, pv)
 		if err != nil {
-			return ctrl.Result{}, err
+			return err
 		}
 		log.Log.WithName("execution logs").
 			Info(fmt.Sprintf("PV %v created", execution.ObjectMeta.Name))
@@ -122,29 +140,30 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				},
 			},
 		}
-		execution.Status.VolumeProvisioned = true
-
 		err = r.Create(ctx, pvc)
-	}
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	var clonePod *corev1.Pod
-	if !execution.Status.RepoCloned {
+		if err != nil {
+			return err
+		}
+		execution.Status.VolumeProvisioned = true
 		log.Log.WithName("execution_logs").Info("Provisioning Cloner Pod")
-
+	}
+	if !execution.Status.RepoCloned {
 		clonePod = &corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      execution.ObjectMeta.Name + "-cloner",
 				Namespace: execution.ObjectMeta.Namespace,
-			},
-			Spec: corev1.PodSpec{
+			}, Spec: corev1.PodSpec{
 				RestartPolicy: corev1.RestartPolicyOnFailure,
 				Containers: []corev1.Container{
 					{
-						Name:    "cloner",
-						Image:   "alpine/git",
-						Command: []string{"git", "clone", execution.Spec.Repo, execution.Spec.CloneDir},
+						Name:  "cloner",
+						Image: "alpine/git",
+						Command: []string{
+							"git",
+							"clone",
+							execution.Spec.Repo,
+							execution.Spec.CloneDir,
+						},
 						VolumeMounts: []corev1.VolumeMount{
 							{
 								Name:      "cloner-volume",
@@ -153,7 +172,6 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 						},
 					},
 				},
-
 				Volumes: []corev1.Volume{
 					{
 						Name: "cloner-volume",
@@ -167,20 +185,14 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			},
 		}
 
-		err = r.Create(ctx, clonePod)
+		err := r.Create(ctx, clonePod)
 		if err != nil {
-			return ctrl.Result{}, err
+			return err
 		}
 		execution.Status.RepoCloned = true
 		log.Log.WithName("execution_logs").Info("Cloner Pod provisioned")
 	}
-	err = r.Status().Update(ctx, execution)
-	if err != nil {
-		log.Log.WithName("execution_logs").Error(err, "Couldn't update execution")
-		return ctrl.Result{}, err
-	}
-
-	return ctrl.Result{RequeueAfter: time.Duration(30 * time.Second)}, nil
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
