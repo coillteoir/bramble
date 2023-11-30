@@ -10,14 +10,15 @@ function App() {
     try {
       await fetch("http://localhost:5555/pipelines")
         .then((response) => response.json())
-        .then((jsonData) =>
+        .then((jsonData) => {
+          console.log(jsonData);
           setData(
             jsonData.map(
               (pipeline: bramble_types.Pipeline) =>
                 new bramble_types.Pipeline(pipeline.metadata, pipeline.spec),
             ),
-          ),
-        );
+          );
+        });
     } catch (error) {
       console.error(error);
     }

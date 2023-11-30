@@ -20,5 +20,7 @@ spec:
       containers:
       - image: davidlynchsd/bramble-ui
         name: bramble-ui
-        resources: {}
-status: {}
+        ports:
+        - containerPort: 5555
+          protocol: TCP
+      serviceAccountName: ui-sa
