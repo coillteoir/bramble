@@ -1,0 +1,27 @@
+apiVersion: pipelines.bramble.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: cbuild
+spec:
+  tasks:
+  - name: compile
+    spec:
+      image: gcc
+      command: 
+        - gcc 
+        - -Wall 
+        - -Wextra 
+        - -Werror 
+        - -o 
+        - ctml 
+        - src/main.c
+      dependencies:
+      - check
+  - name: check
+    spec:
+      image: ghcr.io/facthunder/cppcheck:latest
+      command: 
+        - cppcheck 
+        - -v 
+        - --enable=all 
+        - .

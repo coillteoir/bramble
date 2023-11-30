@@ -93,6 +93,7 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 }
 
 func initExecution(ctx context.Context, r *ExecutionReconciler, execution *pipelinesv1alpha1.Execution, pv *corev1.PersistentVolume, pvc *corev1.PersistentVolumeClaim, clonePod *corev1.Pod) error {
+
 	if !execution.Status.VolumeProvisioned {
 		log.Log.WithName("execution logs").Info("Provisioning PV")
 		pv = &corev1.PersistentVolume{
@@ -147,6 +148,7 @@ func initExecution(ctx context.Context, r *ExecutionReconciler, execution *pipel
 		execution.Status.VolumeProvisioned = true
 		log.Log.WithName("execution_logs").Info("Provisioning Cloner Pod")
 	}
+
 	if !execution.Status.RepoCloned {
 		clonePod = &corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
@@ -163,6 +165,7 @@ func initExecution(ctx context.Context, r *ExecutionReconciler, execution *pipel
 							"clone",
 							execution.Spec.Repo,
 							execution.Spec.CloneDir,
+							"--branch=" + execution.Spec.Branch,
 						},
 						VolumeMounts: []corev1.VolumeMount{
 							{
