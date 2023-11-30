@@ -6,6 +6,17 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  - persistentvolumes
+  - pods
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+- apiGroups:
   - pipelines.bramble.dev
   resources:
   - executions

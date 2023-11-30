@@ -40,6 +40,7 @@ type ExecutionReconciler struct {
 //+kubebuilder:rbac:groups=pipelines.bramble.dev,resources=executions,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=pipelines.bramble.dev,resources=executions/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=pipelines.bramble.dev,resources=executions/finalizers,verbs=update
+//+kubebuilder:rbac:groups="",resources=pods;persistentvolumes;persistentvolumeclaims,verbs=create;delete;list;get
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -138,6 +139,7 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				Namespace: execution.ObjectMeta.Namespace,
 			},
 			Spec: corev1.PodSpec{
+				RestartPolicy: corev1.RestartPolicyOnFailure,
 				Containers: []corev1.Container{
 					{
 						Name:    "cloner",
