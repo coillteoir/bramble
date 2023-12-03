@@ -19,11 +19,8 @@ package controllers
 import (
 	"context"
 	"fmt"
-	//	"time"
 
 	pipelinesv1alpha1 "github.com/davidlynch-sd/bramble/api/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	types "k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -62,20 +59,6 @@ func (r *TaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 	log.Log.WithName("task_logs").Info(fmt.Sprintf("Image: %v Command: %v", task.Spec.Image, task.Spec.Command))
 
-	err = r.Create(ctx, &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: task.ObjectMeta.Name,
-			Namespace:    task.ObjectMeta.Namespace,
-		}, Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:    task.Spec.Image,
-					Image:   task.Spec.Image,
-					Command: task.Spec.Command,
-				},
-			},
-		},
-	})
 	if err != nil {
 		return ctrl.Result{}, err
 	}
