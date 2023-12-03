@@ -28,19 +28,15 @@ export const getPL = async (ns: string): Promise<Pipeline[] | Error> => {
         { name: pl.metadata.name, namespace: ns },
         {
           tasks: pl.spec.tasks.map((task: any) => {
-            return new PLtask(
-              task.name,
-              task.spec,
-              task?.dependencies,
-            );
+            return new PLtask(task.name, task.spec, task?.dependencies);
           }),
         },
       );
     });
     return pls;
   } catch (err: any) {
-      const ret = new Error(err.message)
-      throw ret
-      return ret
+    const ret = new Error(err.message);
+    throw ret;
+    return ret;
   }
 };
