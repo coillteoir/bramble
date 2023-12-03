@@ -1,4 +1,3 @@
-import { Pod } from "kubernetes-types/core/v1";
 import { Pipeline, PLtask } from "./bramble_types";
 
 const k8s = require("@kubernetes/client-node");
@@ -28,19 +27,15 @@ export const getPL = async (ns: string): Promise<Pipeline[] | Error> => {
         { name: pl.metadata.name, namespace: ns },
         {
           tasks: pl.spec.tasks.map((task: any) => {
-            return new PLtask(
-              task.name,
-              task.spec,
-              task?.dependencies,
-            );
+            return new PLtask(task.name, task.spec);
           }),
         },
       );
     });
     return pls;
   } catch (err: any) {
-      const ret = new Error(err.message)
-      throw ret
-      return ret
+    const ret = new Error(err.message);
+    throw ret;
+    return ret;
   }
 };

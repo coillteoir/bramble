@@ -1,21 +1,19 @@
 import { createSignal } from "solid-js";
 import "./App.css";
-import * as bramble_types from "./bramble_types";
+import { PipelineView } from "./PipelineView.tsx";
+import { Pipeline } from "./bramble_types";
 
 function App() {
-  const [pipelines, setData] = createSignal<bramble_types.Pipeline[]>(
-    new Array<bramble_types.Pipeline>(),
-  );
-  const fetchData = async () => {
+  const [pipelines, setData] = createSignal<Pipeline[]>(new Array<Pipeline>());
+  const fetchData = async (ns: string) => {
     try {
-      await fetch("http://localhost:5555/pipelines")
+      await fetch("http://localhost:5555/pipelines/" + ns)
         .then((response) => response.json())
         .then((jsonData) => {
-          console.log(jsonData);
           setData(
             jsonData.map(
-              (pipeline: bramble_types.Pipeline) =>
-                new bramble_types.Pipeline(pipeline.metadata, pipeline.spec),
+              (pipeline: Pipeline) =>
+                new Pipeline(pipeline.metadata, pipeline.spec),
             ),
           );
         });
@@ -23,38 +21,30 @@ function App() {
       console.error(error);
     }
   };
-
+  setInterval(fetchData, 10000);
+  fetchData();
+  const nsinput: any = (
+    <input class="rounded bg-black" type="text" value="default" />
+  );
   return (
     <>
-      {pipelines().map((pl?: bramble_types.Pipeline) => (
-        <div class="pipeline container bg-info">
-          {
-            <>
-              <h2>Name: {pl?.metadata.name}</h2>
-              <h3>Namespace: {pl?.metadata.namespace}</h3>
-              <h2>Tasks</h2>
-              <ul>
-                {pl?.spec.tasks?.map((task: bramble_types.PLtask) => (
-                  <div class="task bg-primary">
-                    <h2>{task.name}</h2>
-                    {task.dependencies && (
-                      <>
-                        <h3>Dependencies</h3>
-                        <ul>
-                          {task?.dependencies?.map((dep: string) => (
-                            <li>{dep}</li>
-                          ))}
-                        </ul>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </ul>
-            </>
-          }
-        </div>
+      <h1 class="absolute text-center inset-x-0 top-0 font-bold top">
+        Bramble
+      </h1>
+      <label class="rounded bg-black">Namespace:</label>
+      {nsinput}
+
+      <button
+        class="text-gray-400 hover:text-white"
+        onclick={() => fetchData(nsinput.value)}
+      >
+        Get pipelines
+      </button>
+
+      <h1>{pipelines()[0]?.metadata.namespace}</h1>
+      {pipelines().map((pl?: Pipeline) => (
+        <PipelineView pipeline={pl} />
       ))}
-      <button onclick={fetchData}>Get pipelines</button>
     </>
   );
 }
