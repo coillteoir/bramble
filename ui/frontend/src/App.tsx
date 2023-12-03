@@ -21,13 +21,13 @@ function App() {
       console.error(error);
     }
   };
-  setInterval(fetchData, 10000)
-  fetchData()
+  setInterval(fetchData, 10000);
+  fetchData();
   return (
     <>
       <h1>{pipelines()[0]?.metadata.namespace}</h1>
       {pipelines().map((pl?: Pipeline) => (
-              <PipelineView pipeline={pl} />
+        <PipelineView pipeline={pl} />
       ))}
       <button onclick={fetchData}>Get pipelines</button>
     </>
