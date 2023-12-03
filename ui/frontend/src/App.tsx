@@ -23,12 +23,24 @@ function App() {
   };
   //setInterval(fetchData, 10000);
   //fetchData();
-  const nsinput: any = <input type="text" value="default" />;
+  const nsinput: any = (
+    <input class="rounded bg-black" type="text" value="default" />
+  );
   return (
     <>
-      <label>Namespace:</label>
+      <h1 class="absolute text-center inset-x-0 top-0 font-bold top">
+        Bramble
+      </h1>
+      <label class="rounded bg-black">Namespace:</label>
       {nsinput}
-      <button onclick={() => fetchData(nsinput.value)}>Get pipelines</button>
+
+      <button
+        class="text-gray-400 hover:text-white"
+        onclick={() => fetchData(nsinput.value)}
+      >
+        Get pipelines
+      </button>
+
       <h1>{pipelines()[0]?.metadata.namespace}</h1>
       {pipelines().map((pl?: Pipeline) => (
         <PipelineView pipeline={pl} />
