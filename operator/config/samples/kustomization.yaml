@@ -2,4 +2,5 @@
 resources:
 - pipelines_v1alpha1_task.yaml
 - pipelines_v1alpha1_pipeline.yaml
-- pipelines_v1alpha1_execution.yaml
+  # - pipelines_v1alpha1_execution.yaml
+- morningbot.yaml
