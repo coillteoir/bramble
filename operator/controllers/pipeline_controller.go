@@ -67,13 +67,11 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		}
 
 	}
-	if !pipeline.Status.ValidDeps {
 		err = validateDependencies(pipeline)
 		if err != nil {
 			log.Log.WithName("pipeline logs").Error(err, "invalid dependencies")
 			return ctrl.Result{}, err
 		}
-	}
 	err = r.Status().Update(ctx, pipeline)
 	if err != nil {
 		return ctrl.Result{}, err
