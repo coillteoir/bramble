@@ -21,8 +21,6 @@ function App() {
       console.error(error);
     }
   };
-  setInterval(fetchData, 10000);
-  fetchData();
   const nsinput: any = (
     <input class="rounded bg-black" type="text" value="default" />
   );

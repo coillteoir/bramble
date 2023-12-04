@@ -25,3 +25,5 @@ spec:
     spec:
       image: python:3.11-slim
       command: ["python", "-mjson.tool", "**/*.json"]
+      dependencies:
+      - balls

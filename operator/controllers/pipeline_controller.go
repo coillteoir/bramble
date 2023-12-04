@@ -18,7 +18,10 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"slices"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -62,8 +65,49 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		if err != nil {
 			return ctrl.Result{}, err
 		}
+
+	}
+	if !pipeline.Status.ValidDeps {
+		err = validateDependencies(pipeline)
+		if err != nil {
+			log.Log.WithName("pipeline logs").Error(err, "invalid dependencies")
+			return ctrl.Result{}, err
+		}
+	}
+	err = r.Status().Update(ctx, pipeline)
+	if err != nil {
+		return ctrl.Result{}, err
 	}
 	return ctrl.Result{ /*RequeueAfter: time.Duration(30 * time.Second)*/ }, nil
+}
+
+func validateDependencies(pipeline *pipelinesv1alpha1.Pipeline) error {
+	deps := make([]string, 0, 0)
+	for _, task := range pipeline.Spec.Tasks {
+		if slices.Contains(task.Spec.Dependencies, task.Name) {
+			return errors.New(fmt.Sprintf("%v cannot contain itself as a dependency", task.Name))
+		}
+		for _, dep := range task.Spec.Dependencies {
+			deps = append(deps, dep)
+		}
+	}
+	// Check all dependencies are valid tasks
+	for _, dep := range deps {
+		depflag := false
+		for _, task := range pipeline.Spec.Tasks {
+			if dep == task.Name {
+				depflag = true
+				break
+			}
+		}
+		if !depflag {
+			return errors.New(fmt.Sprintf("Invalid dependency: %v. Not referenced in the pipeline. Please apply the task to the cluster, or describe it within the pipeline", dep))
+		}
+	}
+
+	pipeline.Status.ValidDeps = true
+
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
