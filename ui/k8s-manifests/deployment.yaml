@@ -5,6 +5,7 @@ metadata:
   labels:
     app: ui
   name: ui
+  namespace: bramble
 spec:
   replicas: 1
   selector:
@@ -23,4 +24,7 @@ spec:
         ports:
         - containerPort: 5555
           protocol: TCP
+        env:
+        - name: IN_CLUSTER
+          value: "1"
       serviceAccountName: ui-sa
