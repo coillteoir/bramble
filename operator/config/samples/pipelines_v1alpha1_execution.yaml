@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/created-by: operator
   name: execution-sample
 spec:
-  pipeline: build
-  repo: https://github.com/coillteoir/bramble
-  branch: develop
-  cloneDir: bramble
+  pipeline: morningbot
+  repo: https://github.com/coillteoir/morningbot
+  branch: leaderboard-fixes
+  cloneDir: morningbot

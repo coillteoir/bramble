@@ -19,6 +19,8 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"slices"
+
 	pipelinesv1alpha1 "github.com/davidlynch-sd/bramble/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -44,6 +46,7 @@ type ExecutionReconciler struct {
 
 func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
+	logger := log.Log.WithName("execution_logs")
 
 	execution := &pipelinesv1alpha1.Execution{}
 	err := r.Get(ctx, req.NamespacedName, execution)
@@ -61,8 +64,14 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
-	log.Log.WithName("execution logs").
-		Info(fmt.Sprintf("Name: %v", execution.ObjectMeta.Name))
+	if !pipeline.Status.ValidDeps {
+		logger.Info("Invalid dependency tree in pipeline")
+		return ctrl.Result{}, err
+	}
+
+	logger.Info(fmt.Sprintf("%v", generateAssociationMatrix(pipeline)))
+
+	logger.Info(fmt.Sprintf("Name: %v", execution.ObjectMeta.Name))
 
 	var pv *corev1.PersistentVolume
 	var pvc *corev1.PersistentVolumeClaim
@@ -81,6 +90,22 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	return ctrl.Result{RequeueAfter: time.Duration(30 * time.Second)}, nil
+}
+
+func generateAssociationMatrix(pipeline *pipelinesv1alpha1.Pipeline) [][]int {
+
+	matrix := make([][]int, len(pipeline.Spec.Tasks))
+
+	for i, task := range pipeline.Spec.Tasks {
+		for _, tasktask := range pipeline.Spec.Tasks {
+			if slices.Contains(task.Spec.Dependencies, tasktask.Name) {
+				matrix[i] = append(matrix[i], 1)
+			} else {
+				matrix[i] = append(matrix[i], 0)
+			}
+		}
+	}
+	return matrix
 }
 
 func initExecution(ctx context.Context, r *ExecutionReconciler, execution *pipelinesv1alpha1.Execution, pv *corev1.PersistentVolume, pvc *corev1.PersistentVolumeClaim, clonePod *corev1.Pod) error {
