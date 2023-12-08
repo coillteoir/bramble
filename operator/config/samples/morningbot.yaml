@@ -4,7 +4,7 @@ metadata:
   name: morningbot
 spec:
   tasks:
-  - name: docker push
+  - name: docker-push
     spec:
       image: docker:latest
       command: ["docker", "push", "davidlynchsd/morningbot:latest"]

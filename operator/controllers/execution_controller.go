@@ -26,6 +26,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	types "k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -55,6 +56,10 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
+	if execution.Status.Error {
+		return ctrl.Result{}, err
+	}
+
 	pipeline := &pipelinesv1alpha1.Pipeline{}
 	err = r.Get(ctx, types.NamespacedName{
 		Name:      execution.Spec.Pipeline,
@@ -70,23 +75,84 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, errors.New("invalid pipeline")
 	}
 
-	logger.Info(fmt.Sprintf("%v", generateAssociationMatrix(pipeline)))
+	matrix := generateAssociationMatrix(pipeline)
 
 	logger.Info(fmt.Sprintf("Name: %v", execution.ObjectMeta.Name))
 
 	var pv *corev1.PersistentVolume
 	var pvc *corev1.PersistentVolumeClaim
 
-	err = initExecution(ctx, r, execution, pv, pvc)
+	if !execution.Status.VolumeProvisioned {
+		err = initExecution(ctx, r, execution, pv, pvc)
 
-	if err != nil {
-		return ctrl.Result{}, err
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	} else {
+		pvcSelector := metav1.LabelSelector{
+			MatchLabels: map[string]string{"bramble-execution": execution.ObjectMeta.Name},
+		}
+		listOptions := &client.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set(pvcSelector.MatchLabels))}
+		pvcs := &corev1.PersistentVolumeClaimList{}
+		err = r.Client.List(ctx, pvcs, listOptions)
+		for _, p := range pvcs.Items {
+			if p.ObjectMeta.Labels["bramble-execution"] == execution.ObjectMeta.Name {
+				pvc = &p
+			}
+		}
 	}
-
 	err = r.Status().Update(ctx, execution)
 	if err != nil {
 		log.Log.WithName("execution_logs").Error(err, "Couldn't update execution")
 		return ctrl.Result{}, err
+	}
+
+	exePods := &corev1.PodList{}
+
+	podSelector := metav1.LabelSelector{
+		MatchLabels: map[string]string{"bramble-execution": execution.ObjectMeta.Name},
+	}
+
+	listOptions := &client.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set(podSelector.MatchLabels))}
+
+	err = r.Client.List(ctx, exePods, listOptions)
+
+	// NOTE This algorithm assumes tasks are in their topological order
+	// Needs to be reworked to handle unsorted matricies
+
+	tasks := pipeline.Spec.Tasks
+
+	// this code is not good, too indented
+	// Recursion will provide a better solution to this problem
+
+	for i, row := range matrix {
+		// Chech if all dependencies have run
+		depFlag := true
+		for ii, val := range row {
+			if val == 1 {
+				// We have now found a task and it's dependency
+				// Check if a pod exists with the label of this task
+				for _, pod := range exePods.Items {
+					// Check if dependency pods have been created
+					if pod.ObjectMeta.Labels["bramble-task"] == tasks[ii].Name && (pod.Status.Phase == corev1.PodSucceeded ||
+						pod.Status.Phase == corev1.PodPending ||
+						pod.Status.Phase == corev1.PodRunning) {
+					} else if pod.ObjectMeta.Labels["bramble-task"] == tasks[ii].Name && pod.Status.Phase == corev1.PodFailed {
+						execution.Status.Error = true
+						err = r.Status().Update(ctx, execution)
+						if err != nil {
+							return ctrl.Result{}, err
+						}
+					}
+				}
+			}
+		}
+		if depFlag {
+			err = runTask(ctx, r, execution, &tasks[i], pvc)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+		}
 	}
 
 	return ctrl.Result{RequeueAfter: time.Duration(30 * time.Second)}, nil
@@ -108,39 +174,24 @@ func generateAssociationMatrix(pipeline *pipelinesv1alpha1.Pipeline) [][]int {
 	return matrix
 }
 
-func runTask(ctx context.Context, r *ExecutionReconciler, execution *pipelinesv1alpha1.Execution, task *pipelinesv1alpha1.Task, pvc *corev1.PersistentVolumeClaim) error {
+func runTask(ctx context.Context, r *ExecutionReconciler, execution *pipelinesv1alpha1.Execution, task *pipelinesv1alpha1.PLTask, pvc *corev1.PersistentVolumeClaim) error {
 
+	log.Log.WithName("RUNTASK LOG").Info(fmt.Sprintf("%v", pvc))
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: execution.ObjectMeta.Name + task.Name,
 			Namespace:    execution.ObjectMeta.Namespace,
 			Labels: map[string]string{
-				"brambleExecution": execution.ObjectMeta.Name,
-				"brambleTask":      task.Name,
+				"bramble-execution": execution.ObjectMeta.Name,
+				"bramble-task":      task.Name,
 			},
 		}, Spec: corev1.PodSpec{
-			RestartPolicy: corev1.RestartPolicyOnFailure,
+			RestartPolicy: corev1.RestartPolicyNever,
 			Containers: []corev1.Container{
 				{
-					Name:    task.Spec.Image,
+					Name:    task.Name,
 					Image:   task.Spec.Image,
 					Command: task.Spec.Command,
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      "source-volume",
-							MountPath: "/src/",
-						},
-					},
-				},
-			},
-			Volumes: []corev1.Volume{
-				{
-					Name: "source-volume",
-					VolumeSource: corev1.VolumeSource{
-						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-							ClaimName: pvc.ObjectMeta.Name,
-						},
-					},
 				},
 			},
 		},
@@ -155,7 +206,6 @@ func runTask(ctx context.Context, r *ExecutionReconciler, execution *pipelinesv1
 }
 
 func initExecution(ctx context.Context, r *ExecutionReconciler, execution *pipelinesv1alpha1.Execution, pv *corev1.PersistentVolume, pvc *corev1.PersistentVolumeClaim) error {
-
 	if !execution.Status.VolumeProvisioned {
 		log.Log.WithName("execution logs").Info("Provisioning PV")
 		pv = &corev1.PersistentVolume{
@@ -191,6 +241,7 @@ func initExecution(ctx context.Context, r *ExecutionReconciler, execution *pipel
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      pv.ObjectMeta.Name + "-pvc",
 				Namespace: execution.ObjectMeta.Namespace,
+				Labels:    map[string]string{"bramble-execution": execution.ObjectMeta.Name},
 			},
 			Spec: corev1.PersistentVolumeClaimSpec{
 				AccessModes: []corev1.PersistentVolumeAccessMode{
@@ -210,7 +261,6 @@ func initExecution(ctx context.Context, r *ExecutionReconciler, execution *pipel
 		execution.Status.VolumeProvisioned = true
 		log.Log.WithName("execution_logs").Info("Provisioning Cloner Pod")
 	}
-
 	if !execution.Status.RepoCloned {
 		clonePod := &corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
