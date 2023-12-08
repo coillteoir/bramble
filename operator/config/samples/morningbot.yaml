@@ -20,8 +20,12 @@ spec:
   - name: python-validate
     spec:
       image: eeacms/pylint
-      command: ["pylint", "morningbot"]
+      command: ["pylint", "/src/morningbot"]
   - name: json-validate
     spec:
       image: python:3.11-slim
       command: ["python", "-mjson.tool", "**/*.json"]
+  - name: ubuntu
+    spec:
+      image: ubuntu
+      command: ["sleep", "10000"]

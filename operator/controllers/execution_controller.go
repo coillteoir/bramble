@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+  http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -57,6 +57,7 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	if execution.Status.Error {
+		logger.Error(err, "Execution in failed state")
 		return ctrl.Result{}, err
 	}
 
@@ -127,27 +128,31 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	for i, row := range matrix {
 		// Chech if all dependencies have run
-		depFlag := true
+		depFlag := false
 		for ii, val := range row {
 			if val == 1 {
 				// We have now found a task and it's dependency
 				// Check if a pod exists with the label of this task
 				for _, pod := range exePods.Items {
 					// Check if dependency pods have been created
-					if pod.ObjectMeta.Labels["bramble-task"] == tasks[ii].Name && (pod.Status.Phase == corev1.PodSucceeded ||
-						pod.Status.Phase == corev1.PodPending ||
-						pod.Status.Phase == corev1.PodRunning) {
-					} else if pod.ObjectMeta.Labels["bramble-task"] == tasks[ii].Name && pod.Status.Phase == corev1.PodFailed {
-						execution.Status.Error = true
-						err = r.Status().Update(ctx, execution)
-						if err != nil {
-							return ctrl.Result{}, err
+					// transform to switch statement future david please <3
+					if pod.ObjectMeta.Labels["bramble-task"] == tasks[ii].Name {
+						if pod.Status.Phase == corev1.PodSucceeded {
+							depFlag = true
+						} else if pod.Status.Phase == corev1.PodPending || pod.Status.Phase == corev1.PodRunning {
+							depFlag = false
+						} else if pod.ObjectMeta.Labels["bramble-task"] == tasks[ii].Name && pod.Status.Phase == corev1.PodFailed {
+							execution.Status.Error = true
+							err = r.Status().Update(ctx, execution)
+							if err != nil {
+								return ctrl.Result{}, err
+							}
 						}
 					}
 				}
 			}
 		}
-		if depFlag {
+		if depFlag || len(tasks[i].Dependencies) == 0 {
 			err = runTask(ctx, r, execution, &tasks[i], pvc)
 			if err != nil {
 				return ctrl.Result{}, err
@@ -176,10 +181,9 @@ func generateAssociationMatrix(pipeline *pipelinesv1alpha1.Pipeline) [][]int {
 
 func runTask(ctx context.Context, r *ExecutionReconciler, execution *pipelinesv1alpha1.Execution, task *pipelinesv1alpha1.PLTask, pvc *corev1.PersistentVolumeClaim) error {
 
-	log.Log.WithName("RUNTASK LOG").Info(fmt.Sprintf("%v", pvc))
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: execution.ObjectMeta.Name + task.Name,
+			GenerateName: execution.ObjectMeta.Name + "-" + task.Name + "-",
 			Namespace:    execution.ObjectMeta.Namespace,
 			Labels: map[string]string{
 				"bramble-execution": execution.ObjectMeta.Name,
@@ -192,11 +196,30 @@ func runTask(ctx context.Context, r *ExecutionReconciler, execution *pipelinesv1
 					Name:    task.Name,
 					Image:   task.Spec.Image,
 					Command: task.Spec.Command,
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "cloner-volume",
+							MountPath: "/src/",
+						},
+					},
+				},
+			},
+			Volumes: []corev1.Volume{
+				{
+					Name: "cloner-volume",
+					VolumeSource: corev1.VolumeSource{
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+							ClaimName: pvc.ObjectMeta.Name,
+						},
+					},
 				},
 			},
 		},
 	}
 
+	if pvc == nil {
+		return nil
+	}
 	err := r.Create(ctx, pod)
 	if err != nil {
 		return err
@@ -276,7 +299,7 @@ func initExecution(ctx context.Context, r *ExecutionReconciler, execution *pipel
 							"git",
 							"clone",
 							execution.Spec.Repo,
-							execution.Spec.CloneDir,
+							"/src/" + execution.Spec.CloneDir,
 							"--branch=" + execution.Spec.Branch,
 						},
 						VolumeMounts: []corev1.VolumeMount{
