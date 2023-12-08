@@ -141,6 +141,7 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 							depFlag = true
 						} else if pod.Status.Phase == corev1.PodPending || pod.Status.Phase == corev1.PodRunning {
 							depFlag = false
+							break
 						} else if pod.ObjectMeta.Labels["bramble-task"] == tasks[ii].Name && pod.Status.Phase == corev1.PodFailed {
 							execution.Status.Error = true
 							err = r.Status().Update(ctx, execution)

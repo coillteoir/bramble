@@ -1,9 +1,9 @@
-apiVersion: pipelinesv1alpha1
+apiVersion: pipelines.bramble.dev/v1alpha1
 kind: Execution
 metadata:
-  name: ctml_test
+  name: ctmltest
 spec:
   repo: https://github.com/coillteoir/ctml
   branch: master
-  pipeline: c_build
+  pipeline: cbuild
   cloneDir: ctml

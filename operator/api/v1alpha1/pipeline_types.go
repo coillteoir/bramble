@@ -49,7 +49,8 @@ type PipelineSpec struct {
 type PipelineStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	ValidDeps bool `json:"validdeps,omitempty" default:"false"`
+	ValidDeps    bool `json:"validdeps,omitempty" default:"false"`
+	TasksCreated bool `json:"taskscreated,omitempty" default:"false"`
 }
 
 //+kubebuilder:object:root=true

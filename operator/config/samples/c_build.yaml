@@ -13,8 +13,8 @@ spec:
         - -Wextra 
         - -Werror 
         - -o 
-        - ctml 
-        - src/main.c
+        - /src/ctml/ctml 
+        - /src/ctml/main.c
       dependencies:
       - check
   - name: check
@@ -22,6 +22,8 @@ spec:
       image: ghcr.io/facthunder/cppcheck:latest
       command: 
         - cppcheck 
-        - -v 
-        - --enable=all 
-        - .
+        - /src/ctml/
+  - name: ubuntu
+    spec:
+      image: ubuntu
+      command: ["sleep", "100000"]

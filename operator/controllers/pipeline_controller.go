@@ -53,20 +53,22 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	log.Log.WithName("pipeline_logs").
 		Info(fmt.Sprintf("Name: %v", pipeline.ObjectMeta.Name))
+	if !pipeline.Status.TasksCreated {
+		for i, task := range pipeline.Spec.Tasks {
+			err = r.Create(ctx, &pipelinesv1alpha1.Task{
+				ObjectMeta: metav1.ObjectMeta{
+					GenerateName: (pipeline.ObjectMeta.Name + "-" + fmt.Sprint(i) + "-"),
+					Namespace:    pipeline.ObjectMeta.Namespace,
+				},
+				Spec: task.Spec,
+			})
+			if err != nil {
+				return ctrl.Result{}, err
+			}
 
-	for i, task := range pipeline.Spec.Tasks {
-		err = r.Create(ctx, &pipelinesv1alpha1.Task{
-			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: (pipeline.ObjectMeta.Name + "-" + fmt.Sprint(i) + "-"),
-				Namespace:    pipeline.ObjectMeta.Namespace,
-			},
-			Spec: task.Spec,
-		})
-		if err != nil {
-			return ctrl.Result{}, err
 		}
-
 	}
+	pipeline.Status.TasksCreated = true
 	err = validateDependencies(pipeline)
 	if err != nil {
 		log.Log.WithName("pipeline logs").Error(err, "invalid dependencies")
@@ -76,7 +78,7 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	return ctrl.Result{ /*RequeueAfter: time.Duration(30 * time.Second)*/ }, nil
+	return ctrl.Result{}, nil
 }
 
 func validateDependencies(pipeline *pipelinesv1alpha1.Pipeline) error {
