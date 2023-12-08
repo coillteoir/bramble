@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 
@@ -66,7 +67,7 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	if !pipeline.Status.ValidDeps {
 		logger.Info("Invalid dependency tree in pipeline")
-		return ctrl.Result{}, err
+		return ctrl.Result{}, errors.New("invalid pipeline")
 	}
 
 	logger.Info(fmt.Sprintf("%v", generateAssociationMatrix(pipeline)))
@@ -75,9 +76,8 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	var pv *corev1.PersistentVolume
 	var pvc *corev1.PersistentVolumeClaim
-	var clonePod *corev1.Pod
 
-	err = initExecution(ctx, r, execution, pv, pvc, clonePod)
+	err = initExecution(ctx, r, execution, pv, pvc)
 
 	if err != nil {
 		return ctrl.Result{}, err
@@ -108,7 +108,53 @@ func generateAssociationMatrix(pipeline *pipelinesv1alpha1.Pipeline) [][]int {
 	return matrix
 }
 
-func initExecution(ctx context.Context, r *ExecutionReconciler, execution *pipelinesv1alpha1.Execution, pv *corev1.PersistentVolume, pvc *corev1.PersistentVolumeClaim, clonePod *corev1.Pod) error {
+func runTask(ctx context.Context, r *ExecutionReconciler, execution *pipelinesv1alpha1.Execution, task *pipelinesv1alpha1.Task, pvc *corev1.PersistentVolumeClaim) error {
+
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: execution.ObjectMeta.Name + task.Name,
+			Namespace:    execution.ObjectMeta.Namespace,
+			Labels: map[string]string{
+				"brambleExecution": execution.ObjectMeta.Name,
+				"brambleTask":      task.Name,
+			},
+		}, Spec: corev1.PodSpec{
+			RestartPolicy: corev1.RestartPolicyOnFailure,
+			Containers: []corev1.Container{
+				{
+					Name:    task.Spec.Image,
+					Image:   task.Spec.Image,
+					Command: task.Spec.Command,
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "source-volume",
+							MountPath: "/src/",
+						},
+					},
+				},
+			},
+			Volumes: []corev1.Volume{
+				{
+					Name: "source-volume",
+					VolumeSource: corev1.VolumeSource{
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+							ClaimName: pvc.ObjectMeta.Name,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	err := r.Create(ctx, pod)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func initExecution(ctx context.Context, r *ExecutionReconciler, execution *pipelinesv1alpha1.Execution, pv *corev1.PersistentVolume, pvc *corev1.PersistentVolumeClaim) error {
 
 	if !execution.Status.VolumeProvisioned {
 		log.Log.WithName("execution logs").Info("Provisioning PV")
@@ -166,7 +212,7 @@ func initExecution(ctx context.Context, r *ExecutionReconciler, execution *pipel
 	}
 
 	if !execution.Status.RepoCloned {
-		clonePod = &corev1.Pod{
+		clonePod := &corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      execution.ObjectMeta.Name + "-cloner",
 				Namespace: execution.ObjectMeta.Namespace,
