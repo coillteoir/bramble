@@ -93,7 +93,11 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		pvcSelector := metav1.LabelSelector{
 			MatchLabels: map[string]string{"bramble-execution": execution.ObjectMeta.Name},
 		}
-		listOptions := &client.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set(pvcSelector.MatchLabels))}
+		listOptions := &client.ListOptions{
+			LabelSelector: labels.SelectorFromSet(
+				labels.Set(pvcSelector.MatchLabels),
+			),
+		}
 		pvcs := &corev1.PersistentVolumeClaimList{}
 		err = r.Client.List(ctx, pvcs, listOptions)
 		for _, p := range pvcs.Items {
@@ -114,7 +118,11 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		MatchLabels: map[string]string{"bramble-execution": execution.ObjectMeta.Name},
 	}
 
-	listOptions := &client.ListOptions{LabelSelector: labels.SelectorFromSet(labels.Set(podSelector.MatchLabels))}
+	listOptions := &client.ListOptions{
+		LabelSelector: labels.SelectorFromSet(
+			labels.Set(podSelector.MatchLabels),
+		),
+	}
 
 	err = r.Client.List(ctx, exePods, listOptions)
 
@@ -135,14 +143,17 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				// Check if a pod exists with the label of this task
 				for _, pod := range exePods.Items {
 					// Check if dependency pods have been created
-					// transform to switch statement future david please <3
 					if pod.ObjectMeta.Labels["bramble-task"] == tasks[ii].Name {
-						if pod.Status.Phase == corev1.PodSucceeded {
+						switch pod.Status.Phase {
+						case corev1.PodSucceeded:
 							depFlag = true
-						} else if pod.Status.Phase == corev1.PodPending || pod.Status.Phase == corev1.PodRunning {
+						case corev1.PodPending:
 							depFlag = false
 							break
-						} else if pod.ObjectMeta.Labels["bramble-task"] == tasks[ii].Name && pod.Status.Phase == corev1.PodFailed {
+						case corev1.PodRunning:
+							depFlag = false
+							break
+						case corev1.PodFailed:
 							execution.Status.Error = true
 							err = r.Status().Update(ctx, execution)
 							if err != nil {
@@ -300,7 +311,7 @@ func initExecution(ctx context.Context, r *ExecutionReconciler, execution *pipel
 							"git",
 							"clone",
 							execution.Spec.Repo,
-							"/src/" + execution.Spec.CloneDir,
+							"/src/",
 							"--branch=" + execution.Spec.Branch,
 						},
 						VolumeMounts: []corev1.VolumeMount{

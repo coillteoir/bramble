@@ -57,8 +57,8 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		for i, task := range pipeline.Spec.Tasks {
 			err = r.Create(ctx, &pipelinesv1alpha1.Task{
 				ObjectMeta: metav1.ObjectMeta{
-					GenerateName: (pipeline.ObjectMeta.Name + "-" + fmt.Sprint(i) + "-"),
-					Namespace:    pipeline.ObjectMeta.Namespace,
+					Name:      (pipeline.ObjectMeta.Name + "-" + fmt.Sprint(i) + "-"),
+					Namespace: pipeline.ObjectMeta.Namespace,
 				},
 				Spec: task.Spec,
 			})

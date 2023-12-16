@@ -11,22 +11,22 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
   name: execution-editor-role
 rules:
-- apiGroups:
-  - pipelines.bramble.dev
-  resources:
-  - executions
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - pipelines.bramble.dev
-  resources:
-  - executions/status
-  verbs:
-  - get
-  - update
+  - apiGroups:
+      - pipelines.bramble.dev
+    resources:
+      - executions
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - pipelines.bramble.dev
+    resources:
+      - executions/status
+    verbs:
+      - get
+      - update

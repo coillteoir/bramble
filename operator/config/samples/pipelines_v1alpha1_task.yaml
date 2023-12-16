@@ -11,8 +11,8 @@ metadata:
 spec:
   image: docker
   command:
-  - docker
-  - build
-  - -t
-  - davidlynchsd/bramble
-  - src/
+    - docker
+    - build
+    - -t
+    - davidlynchsd/bramble
+    - src/

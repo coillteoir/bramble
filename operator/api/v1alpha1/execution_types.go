@@ -30,8 +30,7 @@ type ExecutionSpec struct {
 	// Git repo hosting the code to be tested against pipeline
 	Repo string `json:"repo"`
 	// Git branch
-	Branch   string `json:"branch"`
-	CloneDir string `json:"cloneDir"`
+	Branch string `json:"branch"`
 }
 
 // ExecutionStatus defines the observed state of Execution

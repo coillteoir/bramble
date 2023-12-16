@@ -6,4 +6,3 @@ spec:
   repo: https://github.com/coillteoir/ctml
   branch: master
   pipeline: cbuild
-  cloneDir: ctml

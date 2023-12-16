@@ -11,17 +11,17 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
   name: execution-viewer-role
 rules:
-- apiGroups:
-  - pipelines.bramble.dev
-  resources:
-  - executions
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - pipelines.bramble.dev
-  resources:
-  - executions/status
-  verbs:
-  - get
+  - apiGroups:
+      - pipelines.bramble.dev
+    resources:
+      - executions
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - pipelines.bramble.dev
+    resources:
+      - executions/status
+    verbs:
+      - get

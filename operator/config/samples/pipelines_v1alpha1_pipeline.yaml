@@ -10,11 +10,11 @@ metadata:
   name: build
 spec:
   tasks:
-  - name: build
-    spec:
-      image: golang:latest
-      command: ["GOOS=linux", "GOARCH=amd64", "go", "build", "-o", "main"]
-    dependencies: ["hello"]
+    - name: build
+      spec:
+        image: golang:latest
+        command: ["GOOS=linux", "GOARCH=amd64", "go", "build", "-o", "main"]
+      dependencies: ["hello"]
   taskRefs:
-  - name: docker-build
-    dependencies: ["build"]
+    - name: docker-build
+      dependencies: ["build"]

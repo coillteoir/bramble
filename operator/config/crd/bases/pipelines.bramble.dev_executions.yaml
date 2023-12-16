@@ -38,8 +38,6 @@ spec:
               branch:
                 description: Git branch
                 type: string
-              cloneDir:
-                type: string
               pipeline:
                 description: Reference to the pipeline which will be executed
                 type: string
@@ -48,7 +46,6 @@ spec:
                 type: string
             required:
             - branch
-            - cloneDir
             - pipeline
             - repo
             type: object

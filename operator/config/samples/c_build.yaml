@@ -4,26 +4,26 @@ metadata:
   name: cbuild
 spec:
   tasks:
-  - name: compile
-    spec:
-      image: gcc
-      command: 
-        - gcc 
-        - -Wall 
-        - -Wextra 
-        - -Werror 
-        - -o 
-        - /src/ctml/ctml 
-        - /src/ctml/main.c
-      dependencies:
-      - check
-  - name: check
-    spec:
-      image: ghcr.io/facthunder/cppcheck:latest
-      command: 
-        - cppcheck 
-        - /src/ctml/
-  - name: ubuntu
-    spec:
-      image: ubuntu
-      command: ["sleep", "100000"]
+    - name: compile
+      spec:
+        image: gcc
+        command:
+          - gcc
+          - -Wall
+          - -Wextra
+          - -Werror
+          - -o
+          - /src/ctml
+          - /src/src/main.c
+        dependencies:
+          - check
+    - name: check
+      spec:
+        image: ghcr.io/facthunder/cppcheck:latest
+        command:
+          - cppcheck
+          - /src/src/main.c
+    - name: ubuntu
+      spec:
+        image: ubuntu
+        command: ["sleep", "100000"]
