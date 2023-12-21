@@ -81,14 +81,12 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 }
 
 func validateDependencies(pipeline *pipelinesv1alpha1.Pipeline) error {
-	deps := make([]string, 0, 0)
+	deps := make([]string, 0)
 	for _, task := range pipeline.Spec.Tasks {
 		if slices.Contains(task.Spec.Dependencies, task.Name) {
 			return fmt.Errorf("%v cannot contain itself as a dependency", task.Name)
 		}
-		for _, dep := range task.Spec.Dependencies {
-			deps = append(deps, dep)
-		}
+		deps = append(deps, task.Spec.Dependencies...)
 	}
 	// Check all dependencies are valid tasks
 	for _, dep := range deps {

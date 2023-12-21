@@ -76,12 +76,34 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, errors.New("invalid pipeline")
 	}
 
-	matrix := generateAssociationMatrix(pipeline)
+	//matrix := generateAssociationMatrix(pipeline)
 
 	logger.Info(fmt.Sprintf("Name: %v", execution.ObjectMeta.Name))
 
 	var pv *corev1.PersistentVolume
 	var pvc *corev1.PersistentVolumeClaim
+
+	// Check if volume exists
+	pvList := &corev1.PersistentVolumeList{}
+	err = r.Client.List(ctx, pvList)
+
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if len(pvList.Items) > 0 {
+		for _, p := range pvList.Items {
+			if p.ObjectMeta.Name == execution.ObjectMeta.Name+"-pv" {
+				if p.Status.Phase == corev1.VolumeBound || p.Status.Phase == corev1.VolumeAvailable {
+					execution.Status.VolumeProvisioned = true
+					err = r.Status().Update(ctx, execution)
+					if err != nil {
+						return ctrl.Result{}, err
+					}
+				}
+			}
+		}
+	}
 
 	if !execution.Status.VolumeProvisioned {
 		err = initExecution(ctx, r, execution, pv, pvc)
@@ -91,31 +113,37 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 	} else {
 		pvcSelector := metav1.LabelSelector{
-			MatchLabels: map[string]string{"bramble-execution": execution.ObjectMeta.Name},
+			MatchLabels: map[string]string{
+				"bramble-execution": execution.ObjectMeta.Name,
+			},
 		}
 		listOptions := &client.ListOptions{
 			LabelSelector: labels.SelectorFromSet(
 				labels.Set(pvcSelector.MatchLabels),
 			),
 		}
-		pvcs := &corev1.PersistentVolumeClaimList{}
-		err = r.Client.List(ctx, pvcs, listOptions)
-		for _, p := range pvcs.Items {
+		pvcList := &corev1.PersistentVolumeClaimList{}
+		err = r.Client.List(ctx, pvcList, listOptions)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		for _, p := range pvcList.Items {
 			if p.ObjectMeta.Labels["bramble-execution"] == execution.ObjectMeta.Name {
 				pvc = &p
 			}
 		}
 	}
-	err = r.Status().Update(ctx, execution)
 	if err != nil {
-		log.Log.WithName("execution_logs").Error(err, "Couldn't update execution")
+		logger.Error(err, "Couldn't update execution")
 		return ctrl.Result{}, err
 	}
 
 	exePods := &corev1.PodList{}
 
 	podSelector := metav1.LabelSelector{
-		MatchLabels: map[string]string{"bramble-execution": execution.ObjectMeta.Name},
+		MatchLabels: map[string]string{
+			"bramble-execution": execution.ObjectMeta.Name,
+		},
 	}
 
 	listOptions := &client.ListOptions{
@@ -126,52 +154,31 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	err = r.Client.List(ctx, exePods, listOptions)
 
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+
+    // Check if the repo is cloned before proceeding
+	for _, pod := range exePods.Items {
+		if pod.ObjectMeta.Name == execution.ObjectMeta.Name+"-cloner" {
+			execution.Status.RepoCloned = pod.Status.Phase == corev1.PodSucceeded
+            logger.Info(fmt.Sprintf("Execution: %v repo cloned", execution.ObjectMeta.Name))
+		}
+	}
+	err = r.Status().Update(ctx, execution)
+    if err != nil {
+        return ctrl.Result{}, err
+    }
 	// NOTE This algorithm assumes tasks are in their topological order
 	// Needs to be reworked to handle unsorted matricies
 
-	tasks := pipeline.Spec.Tasks
+	//tasks := pipeline.Spec.Tasks
 
 	// this code is not good, too indented
 	// Recursion will provide a better solution to this problem
-
-	for i, row := range matrix {
-		// Chech if all dependencies have run
-		depFlag := false
-		for ii, val := range row {
-			if val == 1 {
-				// We have now found a task and it's dependency
-				// Check if a pod exists with the label of this task
-				for _, pod := range exePods.Items {
-					// Check if dependency pods have been created
-					if pod.ObjectMeta.Labels["bramble-task"] == tasks[ii].Name {
-						switch pod.Status.Phase {
-						case corev1.PodSucceeded:
-							depFlag = true
-						case corev1.PodPending:
-							depFlag = false
-							break
-						case corev1.PodRunning:
-							depFlag = false
-							break
-						case corev1.PodFailed:
-							execution.Status.Error = true
-							err = r.Status().Update(ctx, execution)
-							if err != nil {
-								return ctrl.Result{}, err
-							}
-						}
-					}
-				}
-			}
-		}
-		if depFlag || len(tasks[i].Dependencies) == 0 {
-			err = runTask(ctx, r, execution, &tasks[i], pvc)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-		}
+	if execution.Status.VolumeProvisioned && execution.Status.RepoCloned {
 	}
-
 	return ctrl.Result{RequeueAfter: time.Duration(30 * time.Second)}, nil
 }
 
@@ -192,6 +199,10 @@ func generateAssociationMatrix(pipeline *pipelinesv1alpha1.Pipeline) [][]int {
 }
 
 func runTask(ctx context.Context, r *ExecutionReconciler, execution *pipelinesv1alpha1.Execution, task *pipelinesv1alpha1.PLTask, pvc *corev1.PersistentVolumeClaim) error {
+
+	if pvc == nil {
+		return fmt.Errorf("NO PVC for pod")
+	}
 
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -229,9 +240,6 @@ func runTask(ctx context.Context, r *ExecutionReconciler, execution *pipelinesv1
 		},
 	}
 
-	if pvc == nil {
-		return nil
-	}
 	err := r.Create(ctx, pod)
 	if err != nil {
 		return err
@@ -245,7 +253,8 @@ func initExecution(ctx context.Context, r *ExecutionReconciler, execution *pipel
 		log.Log.WithName("execution logs").Info("Provisioning PV")
 		pv = &corev1.PersistentVolume{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: execution.ObjectMeta.Name + "-pv",
+				Name:   execution.ObjectMeta.Name + "-pv",
+				Labels: map[string]string{"bramble-execution": execution.ObjectMeta.Name},
 			},
 			Spec: corev1.PersistentVolumeSpec{
 				Capacity: corev1.ResourceList{
@@ -301,6 +310,7 @@ func initExecution(ctx context.Context, r *ExecutionReconciler, execution *pipel
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      execution.ObjectMeta.Name + "-cloner",
 				Namespace: execution.ObjectMeta.Namespace,
+				Labels:    map[string]string{"bramble-execution": execution.ObjectMeta.Name},
 			}, Spec: corev1.PodSpec{
 				RestartPolicy: corev1.RestartPolicyOnFailure,
 				Containers: []corev1.Container{
