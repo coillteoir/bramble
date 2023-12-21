@@ -158,18 +158,17 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
-
-    // Check if the repo is cloned before proceeding
+	// Check if the repo is cloned before proceeding
 	for _, pod := range exePods.Items {
 		if pod.ObjectMeta.Name == execution.ObjectMeta.Name+"-cloner" {
 			execution.Status.RepoCloned = pod.Status.Phase == corev1.PodSucceeded
-            logger.Info(fmt.Sprintf("Execution: %v repo cloned", execution.ObjectMeta.Name))
+			logger.Info(fmt.Sprintf("Execution: %v repo cloned", execution.ObjectMeta.Name))
 		}
 	}
 	err = r.Status().Update(ctx, execution)
-    if err != nil {
-        return ctrl.Result{}, err
-    }
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 	// NOTE This algorithm assumes tasks are in their topological order
 	// Needs to be reworked to handle unsorted matricies
 
