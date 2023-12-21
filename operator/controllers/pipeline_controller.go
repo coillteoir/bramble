@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"slices"
 
@@ -54,10 +53,10 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	log.Log.WithName("pipeline_logs").
 		Info(fmt.Sprintf("Name: %v", pipeline.ObjectMeta.Name))
 	if !pipeline.Status.TasksCreated {
-		for i, task := range pipeline.Spec.Tasks {
+		for _, task := range pipeline.Spec.Tasks {
 			err = r.Create(ctx, &pipelinesv1alpha1.Task{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      (pipeline.ObjectMeta.Name + "-" + fmt.Sprint(i) + "-"),
+					Name:      (pipeline.ObjectMeta.Name + "-" + task.Name),
 					Namespace: pipeline.ObjectMeta.Namespace,
 				},
 				Spec: task.Spec,
@@ -85,7 +84,7 @@ func validateDependencies(pipeline *pipelinesv1alpha1.Pipeline) error {
 	deps := make([]string, 0, 0)
 	for _, task := range pipeline.Spec.Tasks {
 		if slices.Contains(task.Spec.Dependencies, task.Name) {
-			return errors.New(fmt.Sprintf("%v cannot contain itself as a dependency", task.Name))
+			return fmt.Errorf("%v cannot contain itself as a dependency", task.Name)
 		}
 		for _, dep := range task.Spec.Dependencies {
 			deps = append(deps, dep)
@@ -101,7 +100,7 @@ func validateDependencies(pipeline *pipelinesv1alpha1.Pipeline) error {
 			}
 		}
 		if !depflag {
-			return errors.New(fmt.Sprintf("Invalid dependency: %v. Not referenced in the pipeline. Please apply the task to the cluster, or describe it within the pipeline", dep))
+			return fmt.Errorf("Invalid dependency: %v. Not referenced in the pipeline. Please apply the task to the cluster, or describe it within the pipeline", dep)
 		}
 	}
 
