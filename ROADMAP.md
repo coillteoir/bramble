@@ -18,7 +18,7 @@ The operator is the main component and has multiple targets to meet.
 The UI renders the state of custom resources. 
 
 - **Rendering Execution**: Commencing 15/12/2023 est. 2 days
-- **Reworking Pipeline and execution views to trees: Commencing 17/12/2023 est. 7 days
+- **Reworking Pipeline and execution views to trees**: Commencing 17/12/2023 est. 7 days
 - **Optimizing user journeys**: Commencing 27/12/2023
 
 ### Git Service
