@@ -7,19 +7,14 @@ metadata:
     app.kubernetes.io/part-of: operator
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: operator
-  name: pipeline-sample
+  name: build
 spec:
   tasks:
-  - name: hello
-    spec:
-      image: ubuntu
-      command: ["sh", "-c", "echo hello world"]
   - name: build
     spec:
       image: golang:latest
       command: ["GOOS=linux", "GOARCH=amd64", "go", "build", "-o", "main"]
     dependencies: ["hello"]
   taskRefs:
-  - name: test01
+  - name: docker-build
     dependencies: ["build"]
-    

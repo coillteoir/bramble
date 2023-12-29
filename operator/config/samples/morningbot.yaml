@@ -1,0 +1,27 @@
+apiVersion: pipelines.bramble.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: morningbot
+spec:
+  tasks:
+  - name: docker push
+    spec:
+      image: docker:latest
+      command: ["docker", "push", "davidlynchsd/morningbot:latest"]
+      dependencies:
+      - docker-build
+  - name: docker-build
+    spec:
+      image: docker:latest
+      command: ["docker" ,"build","t","davidlynchsd/morningbot","morningbot"]
+      dependencies:
+      - python-validate
+      - json-validate
+  - name: python-validate
+    spec:
+      image: eeacms/pylint
+      command: ["pylint", "morningbot"]
+  - name: json-validate
+    spec:
+      image: python:3.11-slim
+      command: ["python", "-mjson.tool", "**/*.json"]

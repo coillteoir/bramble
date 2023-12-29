@@ -1,0 +1,9 @@
+apiVersion: pipelinesv1alpha1
+kind: Execution
+metadata:
+  name: ctml_test
+spec:
+  repo: https://github.com/coillteoir/ctml
+  branch: master
+  pipeline: c_build
+  cloneDir: ctml
