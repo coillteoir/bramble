@@ -197,6 +197,10 @@ func generateAssociationMatrix(pipeline *pipelinesv1alpha1.Pipeline) [][]int {
 	return matrix
 }
 
+func execute_pipeline_using_dfs(matrix [][]int, pipeline *pipelinesv1alpha1.Pipeline) {
+
+}
+
 func runTask(ctx context.Context, r *ExecutionReconciler, execution *pipelinesv1alpha1.Execution, task *pipelinesv1alpha1.PLTask, pvc *corev1.PersistentVolumeClaim) error {
 
 	if pvc == nil {
