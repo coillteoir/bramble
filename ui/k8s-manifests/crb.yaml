@@ -8,6 +8,6 @@ roleRef:
   kind: ClusterRole
   name: pipeline-viewer-role
 subjects:
-- kind: ServiceAccount
-  name: ui-sa
-  namespace: bramble
+  - kind: ServiceAccount
+    name: ui-sa
+    namespace: bramble

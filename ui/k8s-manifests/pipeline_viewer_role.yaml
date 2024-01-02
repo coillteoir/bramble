@@ -11,17 +11,17 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
   name: pipeline-viewer-role
 rules:
-- apiGroups:
-  - pipelines.bramble.dev
-  resources:
-  - pipelines
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - pipelines.bramble.dev
-  resources:
-  - pipelines/status
-  verbs:
-  - get
+  - apiGroups:
+      - pipelines.bramble.dev
+    resources:
+      - pipelines
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - pipelines.bramble.dev
+    resources:
+      - pipelines/status
+    verbs:
+      - get

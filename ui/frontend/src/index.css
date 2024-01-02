@@ -9,7 +9,12 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background: linear-gradient(180deg, rgba(132,206,221,1) 0%, rgba(149,180,149,1) 44%, rgba(50,99,50,1) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(132, 206, 221, 1) 0%,
+    rgba(149, 180, 149, 1) 44%,
+    rgba(50, 99, 50, 1) 100%
+  );
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
