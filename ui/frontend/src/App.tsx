@@ -1,5 +1,4 @@
 import { createSignal, For } from "solid-js";
-import "./App.css";
 import { PipelineView } from "./PipelineView.tsx";
 import { Pipeline } from "./bramble_types";
 
@@ -23,21 +22,14 @@ function App() {
             console.error(error);
         }
     };
-    const nsinput: any = (
-        <input class="rounded bg-black" type="text" value="default" />
-    );
+    const nsinput: any = <input class="" type="text" value="default" />;
     return (
-        <>
-            <h1 class="absolute text-center inset-x-0 top-0 font-bold top">
-                Bramble
-            </h1>
-            <label class="rounded bg-black">Namespace:</label>
+        <div class="">
+            <h1 class="">Bramble</h1>
+            <label class="">Namespace:</label>
             {nsinput}
 
-            <button
-                class="text-gray-400 hover:text-white"
-                onClick={() => fetchData(nsinput?.value)}
-            >
+            <button class="" onClick={() => fetchData(nsinput?.value)}>
                 Get pipelines
             </button>
 
@@ -45,7 +37,7 @@ function App() {
             <For each={pipelines()}>
                 {(pl: Pipeline) => pl && <PipelineView pipeline={pl} />}
             </For>
-        </>
+        </div>
     );
 }
 
