@@ -1,10 +1,10 @@
 import { Pipeline, PLtask } from "./bramble_types.ts";
 import { Component } from "solid-js";
 
-const PipelineView: Component<{ pipeline: Pipeline | undefined }> = (props: {
-  pipeline: Pipeline | undefined;
+const PipelineView: Component<{ pipeline: Pipeline}> = (props: {
+  pipeline: Pipeline;
 }) => {
-  const pl: Pipeline | undefined = props?.pipeline;
+  const pl: Pipeline = props?.pipeline;
   console.log(pl);
   return (
     <div class="grid gap-4 pipeline rounded bg-black gap">

@@ -40,8 +40,8 @@ function App() {
       </button>
 
       <h1>{pipelines()[0]?.metadata.namespace}</h1>
-      {pipelines().map((pl?: Pipeline) => (
-        <PipelineView pipeline={pl} />
+      {pipelines().map((pl: Pipeline) => (
+        pl && <PipelineView pipeline={pl} />
       ))}
     </>
   );
