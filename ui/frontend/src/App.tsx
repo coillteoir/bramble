@@ -2,7 +2,7 @@ import { createSignal, For } from "solid-js";
 import { PipelineView } from "./PipelineView.tsx";
 import { Pipeline } from "./bramble_types";
 
-function App() {
+const App = () => {
     const [pipelines, setData] = createSignal<Pipeline[]>(
         new Array<Pipeline>()
     );
@@ -39,6 +39,6 @@ function App() {
             </For>
         </div>
     );
-}
+};
 
 export default App;

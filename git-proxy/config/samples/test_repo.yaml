@@ -6,5 +6,5 @@ spec:
     owner: coillteoir
     repo: bramble
   branches:
-  - branch-pattern: ^master$|^main$
-    pipeline: bramble-release
+    - branch-pattern: ^master$|^main$
+      pipeline: bramble-release
