@@ -2,6 +2,7 @@
   "scripts": {
     "build": "tsc",
     "lint": "eslint . --ext .ts",
+    "tidy": "prettier **/*.ts --write",
     "release": "eslint . --ext .ts && tsc -p tsconfig_release.json"
   },
   "dependencies": {
