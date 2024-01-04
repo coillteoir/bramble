@@ -23,7 +23,7 @@ function App() {
             console.error(error);
         }
     };
-    const nsinput : any = (
+    const nsinput: any = (
         <input class="rounded bg-black" type="text" value="default" />
     );
     return (
