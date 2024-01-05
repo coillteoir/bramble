@@ -22,7 +22,7 @@ The operator is the main component and has multiple targets to meet.
 The UI renders the state of custom resources.
 
 - **Rendering Execution**: Commencing 15/12/2023 est. 2 days
-- \*\*Reworking Pipeline and execution views to trees: Commencing 17/12/2023 est. 7 days
+- **Reworking Pipeline and execution views to trees**: Commencing 17/12/2023 est. 7 days
 - **Optimizing user journeys**: Commencing 27/12/2023
 
 ### Git Service
@@ -49,7 +49,13 @@ Work through chapters such as background research and implementation over break
 - Evaluate developer experience and refine where possible
 
 ### Performance
+<<<<<<< HEAD
 
 - Create suite of demo pipelines for different types of projects.
 - Create equivalents in Jenkins, Tekton, Github Actions, and more.
 - Measure performance in environments with similar compute resources.
+=======
+- Create suite of demo pipelines for different types of projects. 
+- Create equivalents in Jenkins, Tekton, Github Actions, and more. 
+- Measure performance in environments with similar compute resources. 
+>>>>>>> 20b8f867b376274e6e7305575981439c4630e10d
