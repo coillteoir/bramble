@@ -15,97 +15,92 @@ spec:
     singular: pipeline
   scope: Namespaced
   versions:
-    - name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: Pipeline is the Schema for the pipelines API
-          properties:
-            apiVersion:
-              description:
-                "APIVersion defines the versioned schema of this representation
-                of an object. Servers should convert recognized schemas to the latest
-                internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
-              type: string
-            kind:
-              description:
-                "Kind is a string value representing the REST resource this
-                object represents. Servers may infer this from the endpoint the client
-                submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: PipelineSpec defines the desired state of Pipeline
-              properties:
-                taskRefs:
-                  description:
-                    Allows developers to use pre applied tasks in the same
-                    namespace
-                  items:
-                    properties:
-                      dependencies:
-                        items:
-                          type: string
-                        type: array
-                      name:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Pipeline is the Schema for the pipelines API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: PipelineSpec defines the desired state of Pipeline
+            properties:
+              taskRefs:
+                description: Allows developers to use pre applied tasks in the same
+                  namespace
+                items:
+                  properties:
+                    dependencies:
+                      items:
                         type: string
-                    required:
-                      - name
-                    type: object
-                  type: array
-                tasks:
-                  description: Allows developers to create a list of tasks
-                  items:
-                    properties:
-                      dependencies:
-                        description: Tasks to be ran before `
-                        items:
-                          type: string
-                        type: array
-                      name:
-                        description: Name of task to be ran
+                      type: array
+                    name:
+                      type: string
+                  required:
+                  - name
+                  type: object
+                type: array
+              tasks:
+                description: Allows developers to create a list of tasks
+                items:
+                  properties:
+                    dependencies:
+                      description: Tasks to be ran before `
+                      items:
                         type: string
-                      spec:
-                        description: Spec of given task
-                        properties:
-                          command:
-                            description:
-                              Command executed by the container, can be used
-                              to determine the behaviour of a CLI app.
-                            items:
-                              type: string
-                            type: array
-                          dependencies:
-                            items:
-                              type: string
-                            type: array
-                          image:
-                            description: Docker image which will be used.
+                      type: array
+                    name:
+                      description: Name of task to be ran
+                      type: string
+                    spec:
+                      description: Spec of given task
+                      properties:
+                        command:
+                          description: Command executed by the container, can be used
+                            to determine the behaviour of a CLI app.
+                          items:
                             type: string
-                        required:
-                          - command
-                          - image
-                        type: object
-                    required:
-                      - name
-                      - spec
-                    type: object
-                  type: array
-              type: object
-            status:
-              description: PipelineStatus defines the observed state of Pipeline
-              properties:
-                taskscreated:
-                  type: boolean
-                validdeps:
-                  description:
-                    'INSERT ADDITIONAL STATUS FIELD - define observed state
-                    of cluster Important: Run "make" to regenerate code after modifying
-                    this file'
-                  type: boolean
-              type: object
-          type: object
-      served: true
-      storage: true
-      subresources:
-        status: {}
+                          type: array
+                        dependencies:
+                          items:
+                            type: string
+                          type: array
+                        image:
+                          description: Docker image which will be used.
+                          type: string
+                      required:
+                      - command
+                      - image
+                      type: object
+                  required:
+                  - name
+                  - spec
+                  type: object
+                type: array
+            type: object
+          status:
+            description: PipelineStatus defines the observed state of Pipeline
+            properties:
+              taskscreated:
+                type: boolean
+              validdeps:
+                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                  of cluster Important: Run "make" to regenerate code after modifying
+                  this file'
+                type: boolean
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
