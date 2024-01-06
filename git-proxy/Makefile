@@ -1,8 +1,9 @@
+REGISTRY?=davidlynchsd
 build:
 	cargo build --release
 
 docker-build:
-	docker build -t davidlynchsd/bramble-git-proxy .
+	docker build -t ${REGISTRY}/bramble-git-proxy .
 
 docker-push:
-	docker push davidlynchsd/bramble-git-proxy
+	docker push ${REGISTRY}/bramble-git-proxy

@@ -1,4 +1,5 @@
-IMG?=davidlynchsd/bramble-ui
+REGISTRY?=davidlynchsd
+IMG?=${REGISTRY}/bramble-ui
 docker-build:
 	docker build -t ${IMG} .
 docker-push: docker-build

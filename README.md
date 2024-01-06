@@ -1,4 +1,4 @@
-# Bramble - A Kubernetes Native CI/CD Framework
+# Bramble - A Full Stack Kubernetes Native CI/CD Framework
 
 ## Installation
 To install and run Bramble, you will need priveliged access to a Kubernetes cluster. 

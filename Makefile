@@ -1,19 +1,20 @@
-
-build_deploy: build_all local_k8s_deploy
-
-local_k8s_deploy:
-	make -C operator install deploy
-	make -C ui k8s
+REGISTRY?=davidlynchsd
 
 build_all:
-	make -C operator docker-build
-	make -C ui docker-build
-	make -C git-proxy docker-build
+	make -C operator docker-build REGISTRY=${REGISTRY}
+	make -C ui docker-build REGISTRY=${REGISTRY}
+	make -C git-proxy docker-build REGISTRY=${REGISTRY}
+
+build_deploy: build_all k8s_deploy
+
+k8s_deploy:
+	make -C operator deploy
+	make -C ui k8s
 
 push_all:
-	make -C operator docker-push
-	make -C ui docker-push
-	make -C git-proxy docker-push
+	make -C operator docker-push REGISTRY=${REGISTRY}
+	make -C ui docker-push REGISTRY=${REGISTRY}
+	make -C git-proxy docker-push REGISTRY=${REGISTRY}
 
 build_push: build_all push_all
 
