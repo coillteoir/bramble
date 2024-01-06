@@ -1,5 +1,5 @@
-REGISTRY?=davidlynchsd
-IMG?=${REGISTRY}/bramble-ui
+OWNER?=davidlynchsd
+IMG?=${OWNER}/bramble-ui
 docker-build:
 	docker build -t ${IMG} .
 docker-push: docker-build
