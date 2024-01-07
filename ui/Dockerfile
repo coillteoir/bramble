@@ -12,4 +12,4 @@ COPY ./backend/ .
 RUN npm install && npm run build
 COPY --from=frontend /app/dist /api/public
 
-CMD ["node", "dist/index.js"]
+ENTRYPOINT ["node", "dist/index.js"]

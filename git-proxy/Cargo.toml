@@ -7,4 +7,5 @@ edition = "2021"
 
 [dependencies]
 octocrab = "0.32.0"
+serde_yaml = "0.9.30"
 tokio = {version = "1.35.1", features = ["full"]}
