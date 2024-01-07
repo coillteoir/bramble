@@ -26,7 +26,7 @@ const PLTaskView: Component<{ task: PLtask; pipeline: Pipeline }> = (props: {
     const task: PLtask = props.task;
     const pipeline: Pipeline = props.pipeline;
     return (
-        <div class="rounded-lg w-auto border-b-2">
+        <div class="">
             {!task.spec.dependencies && <h3 class="">{task.name}</h3>}
             {task.spec.dependencies && (
                 <details open class="">
@@ -40,7 +40,7 @@ const PLTaskView: Component<{ task: PLtask; pipeline: Pipeline }> = (props: {
 
                                 return (
                                     task0 && (
-                                        <li class="border-l-2 border-l-white pl-8">
+                                        <li class="">
                                             <PLTaskView
                                                 task={task0}
                                                 pipeline={pipeline}
