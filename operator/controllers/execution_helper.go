@@ -17,9 +17,11 @@ limitations under the License.
 package controllers
 
 import (
+	//	"container/list"
 	"context"
 	"fmt"
 	"slices"
+	"strings"
 
 	pipelinesv1alpha1 "github.com/davidlynch-sd/bramble/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -44,8 +46,29 @@ func generateAssociationMatrix(pipeline *pipelinesv1alpha1.Pipeline) [][]int {
 	return matrix
 }
 
-func execute_pipeline_using_dfs(matrix [][]int, pipeline *pipelinesv1alpha1.Pipeline) {
+// linear run first to see if it works
 
+func execute_using_bfs(ctx context.Context, r *ExecutionReconciler, matrix [][]int, pipeline *pipelinesv1alpha1.Pipeline, execution *pipelinesv1alpha1.Execution, podList *corev1.PodList, pvc *corev1.PersistentVolumeClaim) error {
+	tasks := pipeline.Spec.Tasks
+	slices.Reverse(tasks)
+	for _, task := range tasks {
+		runFlag := true
+		for _, pod := range podList.Items {
+			// Pod already exists
+			if strings.Contains(pod.ObjectMeta.Name, task.Name) {
+				runFlag = false
+			}
+
+		}
+		if runFlag {
+			err := runTask(ctx, r, execution, &task, pvc)
+			if err != nil {
+				return err
+			}
+			break
+		}
+	}
+	return nil
 }
 
 func runTask(ctx context.Context, r *ExecutionReconciler, execution *pipelinesv1alpha1.Execution, task *pipelinesv1alpha1.PLTask, pvc *corev1.PersistentVolumeClaim) error {

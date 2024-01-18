@@ -1,15 +1,27 @@
-FROM rust:latest as builder
-WORKDIR /app
-COPY . .
-RUN cargo build --release
+# Build the manager binary
+FROM golang:1.21 as builder
+ARG TARGETOS
+ARG TARGETARCH
 
-FROM alpine
+WORKDIR /workspace
+# Copy the Go Modules manifests
+COPY go.mod go.mod
+COPY go.sum go.sum
+# cache deps before building and copying source so that we don't need to re-download as much
+# and so that source changes don't invalidate our downloaded layer
+RUN go mod download
 
-# GLIBC and LIBGCC needed for executable to run. 
-# If container gives "bramble-git-proxy command not found, usually it's because of a linker issue"
-RUN apk upgrade --no-cache && \
-    apk add --no-cache libgcc gcompat
+# Copy the go source
+COPY main.go main.go
 
-COPY --from=builder /app/target/release/bramble-git-proxy /bramble-git-proxy
+# Build
+RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o bramble-git-proxy main.go
 
-ENTRYPOINT /bramble-git-proxy
+# Use distroless as minimal base image to package the manager binary
+# Refer to https://github.com/GoogleContainerTools/distroless for more details
+FROM gcr.io/distroless/static:nonroot
+WORKDIR /
+COPY --from=builder /workspace/bramble-git-proxy .
+USER 65532:65532
+
+ENTRYPOINT ["/bramble-git-proxy"]
