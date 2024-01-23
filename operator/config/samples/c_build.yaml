@@ -1,0 +1,29 @@
+apiVersion: pipelines.bramble.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: cbuild
+spec:
+  tasks:
+    - name: compile
+      spec:
+        image: gcc
+        command:
+          - gcc
+          - -Wall
+          - -Wextra
+          - -Werror
+          - -o
+          - /src/ctml
+          - /src/src/main.c
+        dependencies:
+          - check
+          - ubuntu
+    - name: check
+      spec:
+        image: ghcr.io/facthunder/cppcheck:latest
+        command:
+          - "true"
+    - name: ubuntu
+      spec:
+        image: ubuntu
+        command: ["sleep", "10"]

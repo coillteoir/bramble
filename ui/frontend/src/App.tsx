@@ -1,61 +1,54 @@
-import { createSignal } from "solid-js";
-import "./App.css";
-import * as bramble_types from "./bramble_types";
+import { createSignal, For } from "solid-js";
+import { PipelineView } from "./PipelineView.tsx";
+import { Pipeline } from "./bramble_types";
 
-function App() {
-  const [pipelines, setData] = createSignal<bramble_types.Pipeline[]>(
-    new Array<bramble_types.Pipeline>(),
-  );
-  const fetchData = async () => {
-    try {
-      await fetch("http://localhost:5555/")
-        .then((response) => response.json())
-        .then((jsonData) =>
-          setData(
-            jsonData.map(
-              (pipeline: bramble_types.Pipeline) =>
-                new bramble_types.Pipeline(pipeline.metadata, pipeline.spec),
-            ),
-          ),
-        );
-    } catch (error) {
-      console.error(error);
-    }
-  };
+const App = () => {
+    const [pipelines, setData] = createSignal<Pipeline[]>(
+        new Array<Pipeline>()
+    );
+    const fetchData = async (ns: string) => {
+        try {
+            await fetch("http://localhost:5555/pipelines/" + ns)
+                .then((response) => response.json())
+                .then((jsonData) => {
+                    setData(
+                        jsonData.map(
+                            (pipeline: Pipeline) =>
+                                new Pipeline(pipeline.metadata, pipeline.spec)
+                        )
+                    );
+                });
+        } catch (error) {
+            console.error(error);
+        }
+    };
+    const nsinput: any = <input class="" type="text" value="default" />;
+    return (
+        <>
+            <header class="w-full bg-green-800 px-4">
+                <h1 class="text-white font-sans text-2xl">Bramble</h1>
+                <ul class="flex text-white">
+                    <li class="inline-flex hover:bg-green-700 pr-4">
+                        Pipelines
+                    </li>
+                    <li class="inline-flex hover:bg-green-700 px-4">Tasks</li>
+                </ul>
+            </header>
+            <div class="px-4 bg-green-800">
+                <label class="">Namespace:</label>
+                {nsinput}
 
-  return (
-    <>
-      {pipelines().map((pl?: bramble_types.Pipeline) => (
-        <div class="pipeline container bg-info">
-          {
-            <>
-              <h2>Name: {pl?.metadata.name}</h2>
-              <h3>Namespace: {pl?.metadata.namespace}</h3>
-              <h2>Tasks</h2>
-              <ul>
-                {pl?.spec.tasks?.map((task: bramble_types.PLtask) => (
-                  <div class="task bg-primary">
-                    <h2>{task.name}</h2>
-                    {task.dependencies && (
-                      <>
-                        <h3>Dependencies</h3>
-                        <ul>
-                          {task?.dependencies?.map((dep: string) => (
-                            <li>{dep}</li>
-                          ))}
-                        </ul>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </ul>
-            </>
-          }
-        </div>
-      ))}
-      <button onclick={fetchData}>Get pipelines</button>
-    </>
-  );
-}
+                <button class="" onClick={() => fetchData(nsinput?.value)}>
+                    Get pipelines
+                </button>
+
+                <h1>{pipelines()[0]?.metadata.namespace}</h1>
+                <For each={pipelines()}>
+                    {(pl: Pipeline) => pl && <PipelineView pipeline={pl} />}
+                </For>
+            </div>
+        </>
+    );
+};
 
 export default App;
