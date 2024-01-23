@@ -175,7 +175,16 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	// this code is not good, too indented
 	// Recursion will provide a better solution to this problem
 	if execution.Status.VolumeProvisioned && execution.Status.RepoCloned {
-		execute_using_bfs(ctx, r, matrix, pipeline, execution, exePods, pvc)
+		execute_using_dfs(ctx,
+			r,
+			matrix,
+			0,
+			make([]bool, len(matrix)),
+			pipeline,
+			execution,
+			exePods,
+			pvc,
+		)
 	}
 	return ctrl.Result{RequeueAfter: time.Duration(30 * time.Second)}, nil
 }

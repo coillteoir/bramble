@@ -4,17 +4,11 @@ metadata:
   name: morningbot
 spec:
   tasks:
-    - name: docker-push
-      spec:
-        image: docker:latest
-        command: ["docker", "push", "davidlynchsd/morningbot:latest"]
-        dependencies:
-          - docker-build
     - name: docker-build
       spec:
         image: docker:latest
         command:
-          ["docker", "build", "t", "davidlynchsd/morningbot", "morningbot"]
+          ["docker", "build", "t", "davidlynchsd/morningbot", "/src/morningbot"]
         dependencies:
           - python-validate
           - json-validate
@@ -25,8 +19,10 @@ spec:
     - name: json-validate
       spec:
         image: python:3.11-slim
-        command: ["python", "-mjson.tool", "**/*.json"]
+        command: ["python", "-mjson.tool", "/src/morningbot/config/configuration_data.json"]
     - name: ubuntu
       spec:
         image: ubuntu
-        command: ["sleep", "10000"]
+        command: ["sleep", "10"]
+        dependencies:
+        - docker-build

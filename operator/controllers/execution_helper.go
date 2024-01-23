@@ -14,6 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+   TODO: Implement proper logging
+   TODO: Handle errors correctly
+*/
+
 package controllers
 
 import (
@@ -21,7 +26,6 @@ import (
 	"context"
 	"fmt"
 	"slices"
-	"strings"
 
 	pipelinesv1alpha1 "github.com/davidlynch-sd/bramble/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -46,26 +50,71 @@ func generateAssociationMatrix(pipeline *pipelinesv1alpha1.Pipeline) [][]int {
 	return matrix
 }
 
-// linear run first to see if it works
+// I think creating a custom struct to handle execution task logic would be the move
+// This function will have 10 args by the time it's finished.
+func execute_using_dfs(ctx context.Context,
+	r *ExecutionReconciler,
+	matrix [][]int,
+	start int,
+	visited []bool,
+	pipeline *pipelinesv1alpha1.Pipeline,
+	execution *pipelinesv1alpha1.Execution,
+	podList *corev1.PodList,
+	pvc *corev1.PersistentVolumeClaim,
+) error {
+	visited[start] = true
 
-func execute_using_bfs(ctx context.Context, r *ExecutionReconciler, matrix [][]int, pipeline *pipelinesv1alpha1.Pipeline, execution *pipelinesv1alpha1.Execution, podList *corev1.PodList, pvc *corev1.PersistentVolumeClaim) error {
-	tasks := pipeline.Spec.Tasks
-	slices.Reverse(tasks)
-	for _, task := range tasks {
-		runFlag := true
-		for _, pod := range podList.Items {
-			// Pod already exists
-			if strings.Contains(pod.ObjectMeta.Name, task.Name) {
-				runFlag = false
+	task := pipeline.Spec.Tasks[start]
+
+	// podlist logic goes here
+	// Check task has run/is running
+	//if all dependencies ran
+	for _, pod := range podList.Items {
+		if pod.ObjectMeta.Labels["bramble-task"] == task.Name {
+			switch pod.Status.Phase {
+			case corev1.PodRunning:
+				return nil
+			case corev1.PodPending:
+				return nil
+			case corev1.PodSucceeded:
+				return nil
+			case corev1.PodFailed:
+				return fmt.Errorf("Pod: %v failed", pod.ObjectMeta.Name)
 			}
-
 		}
-		if runFlag {
-			err := runTask(ctx, r, execution, &task, pvc)
+	}
+	fmt.Println("Checking deps now")
+	// Check dependencies have ran before running.
+	count := len(task.Spec.Dependencies)
+	for _, dep := range task.Spec.Dependencies {
+		for _, pod := range podList.Items {
+			fmt.Println(task.Name, dep, count)
+			if pod.ObjectMeta.Labels["bramble-task"] == dep && pod.Status.Phase == corev1.PodSucceeded {
+				count--
+			}
+		}
+	}
+	if count == 0 {
+		fmt.Printf("\nExecuting task: %v\n", task.Name)
+		runTask(ctx, r, execution, &task, pvc)
+	}
+
+	for i, node := range matrix[start] {
+		if node == 1 && !visited[i] {
+			err := execute_using_dfs(
+				ctx,
+				r,
+				matrix,
+				i,
+				visited,
+				pipeline,
+				execution,
+				podList,
+				pvc,
+			)
 			if err != nil {
 				return err
 			}
-			break
 		}
 	}
 	return nil

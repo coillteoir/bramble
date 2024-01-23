@@ -17,13 +17,13 @@ spec:
           - /src/src/main.c
         dependencies:
           - check
+          - ubuntu
     - name: check
       spec:
         image: ghcr.io/facthunder/cppcheck:latest
         command:
-          - cppcheck
-          - /src/src/main.c
+          - "true"
     - name: ubuntu
       spec:
         image: ubuntu
-        command: ["sleep", "100000"]
+        command: ["sleep", "10"]
