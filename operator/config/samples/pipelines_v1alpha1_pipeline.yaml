@@ -7,16 +7,14 @@ metadata:
     app.kubernetes.io/part-of: operator
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: operator
-  name: pipeline-sample
+  name: build
 spec:
-  # TODO(user): Add fields here
   tasks:
-    - contianer: alpine
-      commands: ["sh", "-c", "good evening"]
-      stage: 0
-    - container: pytorch
-      commands: ["ml stuff"]
-      stage: 0
+    - name: build
+      spec:
+        image: golang:latest
+        command: ["GOOS=linux", "GOARCH=amd64", "go", "build", "-o", "main"]
+      dependencies: ["hello"]
   taskRefs:
-    - task-sample
-    - 1
+    - name: docker-build
+      dependencies: ["build"]

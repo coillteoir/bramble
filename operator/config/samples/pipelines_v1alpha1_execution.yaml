@@ -1,0 +1,15 @@
+apiVersion: pipelines.bramble.dev/v1alpha1
+kind: Execution
+metadata:
+  labels:
+    app.kubernetes.io/name: execution
+    app.kubernetes.io/instance: execution-sample
+    app.kubernetes.io/part-of: operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: operator
+  name: execution-sample
+spec:
+  pipeline: morningbot
+  repo: https://github.com/coillteoir/morningbot
+  branch: leaderboard-fixes
+  cloneDir: morningbot

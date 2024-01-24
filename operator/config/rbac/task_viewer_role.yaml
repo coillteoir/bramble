@@ -11,17 +11,17 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
   name: task-viewer-role
 rules:
-- apiGroups:
-  - pipelines.bramble.dev
-  resources:
-  - tasks
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - pipelines.bramble.dev
-  resources:
-  - tasks/status
-  verbs:
-  - get
+  - apiGroups:
+      - pipelines.bramble.dev
+    resources:
+      - tasks
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - pipelines.bramble.dev
+    resources:
+      - tasks/status
+    verbs:
+      - get

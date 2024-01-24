@@ -18,7 +18,10 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	"slices"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -37,21 +40,71 @@ type PipelineReconciler struct {
 //+kubebuilder:rbac:groups=pipelines.bramble.dev,resources=pipelines/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=pipelines.bramble.dev,resources=pipelines/finalizers,verbs=update
 
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Pipeline object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
 func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	pipeline := &pipelinesv1alpha1.Pipeline{}
+	err := r.Get(ctx, req.NamespacedName, pipeline)
 
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	log.Log.WithName("pipeline_logs").
+		Info(fmt.Sprintf("Name: %v", pipeline.ObjectMeta.Name))
+	if !pipeline.Status.TasksCreated {
+		for _, task := range pipeline.Spec.Tasks {
+			err = r.Create(ctx, &pipelinesv1alpha1.Task{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      (pipeline.ObjectMeta.Name + "-" + task.Name),
+					Namespace: pipeline.ObjectMeta.Namespace,
+				},
+				Spec: task.Spec,
+			})
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+
+		}
+	}
+	pipeline.Status.TasksCreated = true
+	err = validateDependencies(pipeline)
+	if err != nil {
+		log.Log.WithName("pipeline logs").Error(err, "invalid dependencies")
+		return ctrl.Result{}, err
+	}
+	err = r.Status().Update(ctx, pipeline)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 	return ctrl.Result{}, nil
+}
+
+func validateDependencies(pipeline *pipelinesv1alpha1.Pipeline) error {
+	deps := make([]string, 0)
+	for _, task := range pipeline.Spec.Tasks {
+		if slices.Contains(task.Spec.Dependencies, task.Name) {
+			return fmt.Errorf("%v cannot contain itself as a dependency", task.Name)
+		}
+		deps = append(deps, task.Spec.Dependencies...)
+	}
+	// Check all dependencies are valid tasks
+	for _, dep := range deps {
+		depflag := false
+		for _, task := range pipeline.Spec.Tasks {
+			if dep == task.Name {
+				depflag = true
+				break
+			}
+		}
+		if !depflag {
+			return fmt.Errorf("Invalid dependency: %v. Not referenced in the pipeline. Please apply the task to the cluster, or describe it within the pipeline", dep)
+		}
+	}
+
+	pipeline.Status.ValidDeps = true
+
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
