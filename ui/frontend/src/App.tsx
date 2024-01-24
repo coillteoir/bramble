@@ -25,20 +25,20 @@ const App = () => {
     const nsinput: any = <input class="" type="text" value="default" />;
     return (
         <>
-            <header class="w-full bg-green-800 px-4">
-                <h1 class="text-white font-sans text-2xl">Bramble</h1>
-                <ul class="flex text-white">
-                    <li class="inline-flex hover:bg-green-700 pr-4">
+            <header class="">
+                <h1 class="">Bramble</h1>
+                <ul class="">
+                    <li class="">
                         Pipelines
                     </li>
-                    <li class="inline-flex hover:bg-green-700 px-4">Tasks</li>
+                    <li class="">Tasks</li>
                 </ul>
             </header>
-            <div class="px-4 bg-green-800">
+            <div class="">
                 <label class="">Namespace:</label>
                 {nsinput}
 
-                <button class="" onClick={() => fetchData(nsinput?.value)}>
+                <button class="btn" onClick={() => fetchData(nsinput?.value)}>
                     Get pipelines
                 </button>
 

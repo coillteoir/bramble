@@ -7,7 +7,7 @@ const PipelineView: Component<{ pipeline: Pipeline }> = (props: {
     const pl: Pipeline = props.pipeline;
     console.log(pl);
     return (
-        <div class="p-8 bg-black border-2 border-white">
+        <div class="">
             <h2 class="">Pipeline: {pl.metadata.name}</h2>
             <h2 class=""> Tasks </h2>
             <ul class="">
