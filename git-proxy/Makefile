@@ -12,6 +12,9 @@ docker-build:
 docker-push:
 	docker push ${OWNER}/bramble-git-proxy
 
+local-k8s-deploy:
+	kubectl apply -k k8s-manifests
+
 tidy:
 	go fmt ./...
 	go vet ./...

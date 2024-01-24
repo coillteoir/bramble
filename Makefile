@@ -10,6 +10,7 @@ build_deploy: build_all k8s_deploy
 k8s_deploy:
 	make -C operator deploy
 	make -C ui k8s
+	make -C git-proxy local-k8s-deploy
 
 push_all:
 	make -C operator docker-push OWNER=${OWNER}

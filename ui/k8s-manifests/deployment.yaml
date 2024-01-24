@@ -3,20 +3,20 @@ kind: Deployment
 metadata:
   creationTimestamp: null
   labels:
-    app: ui
-  name: ui
+    app: bramble-ui
+  name: bramble-ui
   namespace: bramble
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ui
+      app: bramble-ui
   strategy: {}
   template:
     metadata:
       creationTimestamp: null
       labels:
-        app: ui
+        app: bramble-ui
     spec:
       containers:
         - image: davidlynchsd/bramble-ui
@@ -27,4 +27,4 @@ spec:
           env:
             - name: IN_CLUSTER
               value: "1"
-      serviceAccountName: ui-sa
+      serviceAccountName: bramble-ui-sa

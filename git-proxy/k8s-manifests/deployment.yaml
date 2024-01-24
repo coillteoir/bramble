@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: bramble-git-proxy
+  name: bramble-git-proxy
+  namespace: bramble
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bramble-git-proxy
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: bramble-git-proxy
+    spec:
+      containers:
+      - image: davidlynchsd/bramble-git-proxy
+        name: bramble-git-proxy
+        resources: {}
+status: {}
