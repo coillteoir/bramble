@@ -8,7 +8,7 @@ spec:
       spec:
         image: docker:latest
         command:
-          ["docker", "build", "t", "davidlynchsd/morningbot", "/src/morningbot"]
+          ["docker", "build", "-t", "davidlynchsd/morningbot", "/src/morningbot"]
         dependencies:
           - python-validate
           - json-validate

@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	pipelinesv1alpha1 "github.com/davidlynch-sd/bramble/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -29,8 +30,8 @@ import (
 	types "k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"time"
 )
 
 // ExecutionReconciler reconciles a Execution object
@@ -43,6 +44,8 @@ type ExecutionReconciler struct {
 //+kubebuilder:rbac:groups=pipelines.bramble.dev,resources=executions/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=pipelines.bramble.dev,resources=executions/finalizers,verbs=update
 //+kubebuilder:rbac:groups="",resources=pods;persistentvolumes;persistentvolumeclaims,verbs=create;delete;list;get
+
+const executionFinalizer = "executions.pipelines.bramble.dev/finalizer"
 
 func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
@@ -57,6 +60,80 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	if execution.Status.Error {
 		logger.Error(err, "Execution in failed state")
 		return ctrl.Result{}, err
+	}
+
+	isExecutionMarkedToBeDeleted := execution.GetDeletionTimestamp() != nil
+	if isExecutionMarkedToBeDeleted {
+		if controllerutil.ContainsFinalizer(execution, executionFinalizer) {
+			exePods := &corev1.PodList{}
+
+			podSelector := metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"bramble-execution": execution.ObjectMeta.Name,
+				},
+			}
+
+			podListOptions := &client.ListOptions{
+				LabelSelector: labels.SelectorFromSet(
+					labels.Set(podSelector.MatchLabels),
+				),
+			}
+
+			err = r.Client.List(ctx, exePods, podListOptions)
+
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			for _, pod := range exePods.Items {
+				err := r.Client.Delete(ctx, &pod)
+				if err != nil {
+					return ctrl.Result{}, err
+				}
+			}
+
+			pvcSelector := metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"bramble-execution": execution.ObjectMeta.Name,
+				},
+			}
+			listOptions := &client.ListOptions{
+				LabelSelector: labels.SelectorFromSet(
+					labels.Set(pvcSelector.MatchLabels),
+				),
+			}
+			pvcList := &corev1.PersistentVolumeClaimList{}
+			err = r.Client.List(ctx, pvcList, listOptions)
+
+			for _, pvc := range pvcList.Items {
+				err = r.Client.Delete(ctx, &pvc)
+			}
+
+			pvList := &corev1.PersistentVolumeList{}
+			err = r.Client.List(ctx, pvList)
+
+			for _, pv := range pvList.Items {
+				if pv.ObjectMeta.Name == execution.ObjectMeta.Name+"-pv" {
+					r.Client.Delete(ctx, &pv)
+					break
+				}
+			}
+
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+
+			controllerutil.RemoveFinalizer(execution, executionFinalizer)
+			err = r.Update(ctx, execution)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+
+		}
+		return ctrl.Result{}, nil
+	}
+
+	if execution.Status.Completed {
+		return ctrl.Result{}, nil
 	}
 
 	pipeline := &pipelinesv1alpha1.Pipeline{}
@@ -75,8 +152,6 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	matrix := generateAssociationMatrix(pipeline)
-
-	logger.Info(fmt.Sprintf("Name: %v", execution.ObjectMeta.Name))
 
 	var pv *corev1.PersistentVolume
 	var pvc *corev1.PersistentVolumeClaim
@@ -175,12 +250,14 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	// NOTE This algorithm assumes tasks are in their topological order
 	// Needs to be reworked to handle unsorted matricies
 
+	visited := make([]bool, len(matrix))
+
 	if execution.Status.VolumeProvisioned && execution.Status.RepoCloned {
 		err = execute_using_dfs(ctx,
 			r,
 			matrix,
 			0,
-			make([]bool, len(matrix)),
+			visited,
 			pipeline,
 			execution,
 			exePods,
@@ -190,6 +267,15 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			return ctrl.Result{}, err
 		}
 	}
+
+	if !controllerutil.ContainsFinalizer(execution, executionFinalizer) {
+		controllerutil.AddFinalizer(execution, executionFinalizer)
+		err = r.Update(ctx, execution)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
 	return ctrl.Result{RequeueAfter: time.Duration(2 * time.Second)}, nil
 }
 

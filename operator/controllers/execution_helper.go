@@ -76,6 +76,10 @@ func execute_using_dfs(ctx context.Context,
 			case corev1.PodPending:
 				return nil
 			case corev1.PodSucceeded:
+				if start == 1 {
+					execution.Status.Completed = true
+					r.Client.Update(ctx, execution)
+				}
 				return nil
 			case corev1.PodFailed:
 				return fmt.Errorf("Pod: %v failed", pod.ObjectMeta.Name)
@@ -96,13 +100,14 @@ func execute_using_dfs(ctx context.Context,
 			}
 		}
 	}
-    // BUG: When running controller-manger in cluster, pods are created twice and executions do not work
+	// BUG: When running controller-manger in cluster, pods are created multiple times and executions do not work
 	if count == 0 {
 		fmt.Printf("\nExecuting task: %v\n", task.Name)
 		err := runTask(ctx, r, execution, &task, pvc)
 		if err != nil {
 			return err
 		}
+		return nil
 	}
 
 	for i, node := range matrix[start] {
@@ -230,7 +235,6 @@ func initExecution(ctx context.Context, r *ExecutionReconciler, execution *pipel
 		if err != nil {
 			return err
 		}
-		execution.Status.VolumeProvisioned = true
 		log.Log.WithName("execution_logs").Info("Provisioning Cloner Pod")
 	}
 	if !execution.Status.RepoCloned {
@@ -277,7 +281,6 @@ func initExecution(ctx context.Context, r *ExecutionReconciler, execution *pipel
 		if err != nil {
 			return err
 		}
-		execution.Status.RepoCloned = true
 		log.Log.WithName("execution_logs").Info("Cloner Pod provisioned")
 	}
 	return nil
