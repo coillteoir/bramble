@@ -157,25 +157,26 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	// Check if the repo is cloned before proceeding
-	for _, pod := range exePods.Items {
-		if pod.ObjectMeta.Name == execution.ObjectMeta.Name+"-cloner" {
-			execution.Status.RepoCloned = pod.Status.Phase == corev1.PodSucceeded
-			logger.Info(fmt.Sprintf("Execution: %v repo cloned", execution.ObjectMeta.Name))
+	if !execution.Status.RepoCloned {
+		for _, pod := range exePods.Items {
+			if pod.ObjectMeta.Name == execution.ObjectMeta.Name+"-cloner" {
+				execution.Status.RepoCloned = pod.Status.Phase == corev1.PodSucceeded
+				logger.Info(fmt.Sprintf("Execution: %v repo cloned", execution.ObjectMeta.Name))
+			}
 		}
 	}
+
 	err = r.Status().Update(ctx, execution)
+
 	if err != nil {
 		return ctrl.Result{}, err
 	}
+
 	// NOTE This algorithm assumes tasks are in their topological order
 	// Needs to be reworked to handle unsorted matricies
 
-	//tasks := pipeline.Spec.Tasks
-
-	// this code is not good, too indented
-	// Recursion will provide a better solution to this problem
 	if execution.Status.VolumeProvisioned && execution.Status.RepoCloned {
-		execute_using_dfs(ctx,
+		err = execute_using_dfs(ctx,
 			r,
 			matrix,
 			0,
@@ -185,8 +186,11 @@ func (r *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			exePods,
 			pvc,
 		)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 	}
-	return ctrl.Result{RequeueAfter: time.Duration(30 * time.Second)}, nil
+	return ctrl.Result{RequeueAfter: time.Duration(2 * time.Second)}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

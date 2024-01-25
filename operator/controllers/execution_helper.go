@@ -68,7 +68,6 @@ func execute_using_dfs(ctx context.Context,
 
 	// podlist logic goes here
 	// Check task has run/is running
-	//if all dependencies ran
 	for _, pod := range podList.Items {
 		if pod.ObjectMeta.Labels["bramble-task"] == task.Name {
 			switch pod.Status.Phase {
@@ -83,20 +82,27 @@ func execute_using_dfs(ctx context.Context,
 			}
 		}
 	}
+	//TODO make sure pods belong to the same execution
 	fmt.Println("Checking deps now")
 	// Check dependencies have ran before running.
 	count := len(task.Spec.Dependencies)
 	for _, dep := range task.Spec.Dependencies {
 		for _, pod := range podList.Items {
-			fmt.Println(task.Name, dep, count)
-			if pod.ObjectMeta.Labels["bramble-task"] == dep && pod.Status.Phase == corev1.PodSucceeded {
-				count--
+			if pod.ObjectMeta.Labels["bramble-execution"] == execution.ObjectMeta.Name && pod.ObjectMeta.Labels["bramble-task"] == dep {
+				if pod.Status.Phase == corev1.PodSucceeded {
+					fmt.Println(task.Name, dep, count)
+					count--
+				}
 			}
 		}
 	}
+    // BUG: When running controller-manger in cluster, pods are created twice and executions do not work
 	if count == 0 {
 		fmt.Printf("\nExecuting task: %v\n", task.Name)
-		runTask(ctx, r, execution, &task, pvc)
+		err := runTask(ctx, r, execution, &task, pvc)
+		if err != nil {
+			return err
+		}
 	}
 
 	for i, node := range matrix[start] {
