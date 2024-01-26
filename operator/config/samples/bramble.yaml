@@ -1,0 +1,10 @@
+apiVersion: pipelines.bramble.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: bramble-build
+spec:
+  tasks:
+    - name: hello
+      spec:
+          image: ubuntu
+          command: ["sh", "-c", "echo hello world"]

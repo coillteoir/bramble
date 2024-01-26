@@ -1,0 +1,8 @@
+apiVersion: pipelines.bramble.dev/v1alpha1
+kind: Execution
+metadata:
+  name: bramble-exec
+spec:
+  repo: https://github.com/coillteoir/bramble
+  branch: master
+  pipeline: bramble-build
