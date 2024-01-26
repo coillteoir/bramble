@@ -45,7 +45,6 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	pipeline := &pipelinesv1alpha1.Pipeline{}
 	err := r.Get(ctx, req.NamespacedName, pipeline)
-
 	if err != nil {
 		return ctrl.Result{}, err
 	}

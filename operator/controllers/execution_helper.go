@@ -35,7 +35,6 @@ import (
 )
 
 func generateAssociationMatrix(pipeline *pipelinesv1alpha1.Pipeline) [][]int {
-
 	matrix := make([][]int, len(pipeline.Spec.Tasks))
 
 	for i, task := range pipeline.Spec.Tasks {
@@ -47,13 +46,14 @@ func generateAssociationMatrix(pipeline *pipelinesv1alpha1.Pipeline) [][]int {
 			}
 		}
 	}
+
 	return matrix
 }
 
 // I think creating a custom struct to handle execution task logic would be the move
 // This function will have 10 args by the time it's finished.
-func execute_using_dfs(ctx context.Context,
-	r *ExecutionReconciler,
+func executeUsingDfs(ctx context.Context,
+	reconciler *ExecutionReconciler,
 	matrix [][]int,
 	start int,
 	visited []bool,
@@ -62,12 +62,15 @@ func execute_using_dfs(ctx context.Context,
 	podList *corev1.PodList,
 	pvc *corev1.PersistentVolumeClaim,
 ) error {
+	logger := log.Log.WithName("execution_logs")
+
 	visited[start] = true
 
 	task := pipeline.Spec.Tasks[start]
 
 	// podlist logic goes here
 	// Check task has run/is running
+
 	for _, pod := range podList.Items {
 		if pod.ObjectMeta.Labels["bramble-task"] == task.Name {
 			switch pod.Status.Phase {
@@ -76,25 +79,29 @@ func execute_using_dfs(ctx context.Context,
 			case corev1.PodPending:
 				return nil
 			case corev1.PodSucceeded:
-				if start == 1 {
+				if start == 0 {
 					execution.Status.Completed = true
-					r.Client.Update(ctx, execution)
+					err := reconciler.Status().Update(ctx, execution)
+					if err != nil {
+						return err
+					}
 				}
+
 				return nil
 			case corev1.PodFailed:
 				return fmt.Errorf("Pod: %v failed", pod.ObjectMeta.Name)
 			}
 		}
 	}
-	//TODO make sure pods belong to the same execution
-	fmt.Println("Checking deps now")
+	// TODO make sure pods belong to the same execution
+	logger.Info(fmt.Sprintf("Checking dependencies of task: %v", task.Name))
 	// Check dependencies have ran before running.
 	count := len(task.Spec.Dependencies)
 	for _, dep := range task.Spec.Dependencies {
 		for _, pod := range podList.Items {
 			if pod.ObjectMeta.Labels["bramble-execution"] == execution.ObjectMeta.Name && pod.ObjectMeta.Labels["bramble-task"] == dep {
 				if pod.Status.Phase == corev1.PodSucceeded {
-					fmt.Println(task.Name, dep, count)
+					logger.Info(fmt.Sprintf("Task: %v, Dependency: %v, Count: %v", task.Name, dep, count))
 					count--
 				}
 			}
@@ -102,19 +109,20 @@ func execute_using_dfs(ctx context.Context,
 	}
 	// BUG: When running controller-manger in cluster, pods are created multiple times and executions do not work
 	if count == 0 {
-		fmt.Printf("\nExecuting task: %v\n", task.Name)
-		err := runTask(ctx, r, execution, &task, pvc)
+		logger.Info(fmt.Sprintf("Executing task: %v", task.Name))
+		err := runTask(ctx, reconciler, execution, &task, pvc)
 		if err != nil {
 			return err
 		}
+
 		return nil
 	}
 
 	for i, node := range matrix[start] {
 		if node == 1 && !visited[i] {
-			err := execute_using_dfs(
+			err := executeUsingDfs(
 				ctx,
-				r,
+				reconciler,
 				matrix,
 				i,
 				visited,
@@ -128,11 +136,11 @@ func execute_using_dfs(ctx context.Context,
 			}
 		}
 	}
+
 	return nil
 }
 
 func runTask(ctx context.Context, r *ExecutionReconciler, execution *pipelinesv1alpha1.Execution, task *pipelinesv1alpha1.PLTask, pvc *corev1.PersistentVolumeClaim) error {
-
 	if pvc == nil {
 		return fmt.Errorf("NO PVC for pod")
 	}
@@ -182,8 +190,10 @@ func runTask(ctx context.Context, r *ExecutionReconciler, execution *pipelinesv1
 }
 
 func initExecution(ctx context.Context, r *ExecutionReconciler, execution *pipelinesv1alpha1.Execution, pv *corev1.PersistentVolume, pvc *corev1.PersistentVolumeClaim) error {
+	logger := log.Log.WithName("execution_logs")
 	if !execution.Status.VolumeProvisioned {
-		log.Log.WithName("execution logs").Info("Provisioning PV")
+		logger.Info("Provisioning PV")
+
 		pv = &corev1.PersistentVolume{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:   execution.ObjectMeta.Name + "-pv",
@@ -209,12 +219,12 @@ func initExecution(ctx context.Context, r *ExecutionReconciler, execution *pipel
 		if err != nil {
 			return err
 		}
-		log.Log.WithName("execution logs").
-			Info(fmt.Sprintf("PV %v created", execution.ObjectMeta.Name))
 
-		log.Log.WithName("execution logs").Info("Provisioning PVC")
+		logger.Info(fmt.Sprintf("PV %v created", execution.ObjectMeta.Name))
+
+		logger.Info("Provisioning PVC")
+
 		pvc = &corev1.PersistentVolumeClaim{
-
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      pv.ObjectMeta.Name + "-pvc",
 				Namespace: execution.ObjectMeta.Namespace,
@@ -232,12 +242,15 @@ func initExecution(ctx context.Context, r *ExecutionReconciler, execution *pipel
 			},
 		}
 		err = r.Create(ctx, pvc)
+
 		if err != nil {
 			return err
 		}
-		log.Log.WithName("execution_logs").Info("Provisioning Cloner Pod")
+		logger.Info("Provisioning Cloner Pod")
 	}
+
 	if !execution.Status.RepoCloned {
+
 		clonePod := &corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      execution.ObjectMeta.Name + "-cloner",
@@ -281,7 +294,9 @@ func initExecution(ctx context.Context, r *ExecutionReconciler, execution *pipel
 		if err != nil {
 			return err
 		}
-		log.Log.WithName("execution_logs").Info("Cloner Pod provisioned")
+
+		logger.Info("Cloner Pod provisioned")
 	}
+
 	return nil
 }

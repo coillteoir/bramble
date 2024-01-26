@@ -18,7 +18,7 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Execution is the Schema for the executions API
+        description: Execution is the Schema for the executions API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -33,16 +33,16 @@ spec:
           metadata:
             type: object
           spec:
-            description: ExecutionSpec defines the desired state of Execution
+            description: ExecutionSpec defines the desired state of Execution.
             properties:
               branch:
-                description: Git branch
+                description: Git branch.
                 type: string
               pipeline:
-                description: Reference to the pipeline which will be executed
+                description: Reference to the pipeline which will be executed.
                 type: string
               repo:
-                description: Git repo hosting the code to be tested against pipeline
+                description: Git repo hosting the code to be tested against pipeline.
                 type: string
             required:
             - branch
@@ -50,31 +50,32 @@ spec:
             - repo
             type: object
           status:
-            description: ExecutionStatus defines the observed state of Execution
+            description: ExecutionStatus defines the observed state of Execution.
             properties:
               completed:
-                description: States if the pipeline is completed
+                description: States if the pipeline is completed.
                 type: boolean
               completedTasks:
-                description: Tasks which have already completed
+                description: Tasks which have already completed.
                 items:
                   type: string
                 type: array
               error:
-                description: States if the pipeline has failed at any point
+                description: States if the pipeline has failed at any point.
                 type: boolean
               executing:
-                description: Describes which tasks are currently running
+                description: Describes which tasks are currently running.
                 items:
                   type: string
                 type: array
               repoCloned:
-                description: Tells the controller if the repo is cloned
+                description: Tells the controller if the repo is cloned.
                 type: boolean
               volumeProvisioned:
-                description: Shows if the PV for this execution has been provisioned
+                description: Shows if the PV for this execution has been provisioned.
                 type: boolean
             required:
+            - completed
             - error
             type: object
         type: object
