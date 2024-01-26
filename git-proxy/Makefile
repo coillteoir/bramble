@@ -16,6 +16,6 @@ local-k8s-deploy:
 	kubectl apply -k k8s-manifests
 
 tidy:
-	go fmt ./...
+	gofumpt -w **/*.go
 	go vet ./...
 	golangci-lint run
