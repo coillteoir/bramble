@@ -30,6 +30,5 @@ kubectl apply -k operator/config/samples
 - Complete execution of Pipelines.
 - Flesh out UI to represent pipelines well.
 - Have git service designed and working.
-=======
-- Pipelines to build, test, and deploy different components of Lugh
+- Pipelines to build, test, and deploy different components of Bramble
 - C program to generate pngs, merging to master posts the generated image to Instagram
