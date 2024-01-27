@@ -1,6 +1,6 @@
 import express, { Express, Request, Response } from "express";
 import cors from "cors";
-import { getPL } from "./query_cluster";
+import { getPipelines } from "./query_cluster";
 
 const app: Express = express();
 
@@ -12,8 +12,8 @@ app.use(express.static("public"));
 
 app.get("/pipelines/:ns", async (req: Request, res: Response) => {
   try {
-    console.log("Queriying pipelines in:" + req.params.ns);
-    const Pipelines = await getPL(req.params.ns);
+    console.log("Queriying pipelines in: " + req.params.ns);
+    const Pipelines = await getPipelines(req.params.ns);
     console.log(Pipelines);
     res.json(Pipelines);
   } catch (error) {

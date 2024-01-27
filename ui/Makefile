@@ -13,7 +13,7 @@ k8s:
 	kubectl apply -k k8s-manifests
 
 crd-generate:
-	make -C ../operator generate
+	make -C ../operator manifests
 	npx @kubernetes-models/crd-generate --input ../operator/config/crd/bases/* --output frontend/src/bramble-types
 	npx @kubernetes-models/crd-generate --input ../operator/config/crd/bases/* --output backend/src/bramble-types
 	

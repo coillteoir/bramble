@@ -1,4 +1,4 @@
-import { Pipeline, PLtask } from "./bramble_types";
+import { pipelinesBrambleDev } from "./bramble-types";
 
 const k8s = require("@kubernetes/client-node");
 
@@ -14,24 +14,21 @@ if (process.env.IN_CLUSTER === "1") {
 
 const k8sCRDApi = kc.makeApiClient(k8s.CustomObjectsApi);
 
-export const getPL = async (ns: string): Promise<Pipeline[] | Error> => {
+export const getPipelines = async (
+  namespace: string,
+): Promise<pipelinesBrambleDev.v1alpha1.Pipeline[] | Error> => {
   try {
     const response = await k8sCRDApi.listNamespacedCustomObject(
       "pipelines.bramble.dev",
       "v1alpha1",
-      ns,
+      namespace,
       "pipelines",
     );
-    const pls: Pipeline[] = response?.body?.items.map((pl: any) => {
-      return new Pipeline(
-        { name: pl.metadata.name, namespace: ns },
-        {
-          tasks: pl.spec.tasks.map((task: any) => {
-            return new PLtask(task.name, task.spec);
-          }),
-        },
-      );
-    });
+    console.log(response)
+    const pls: pipelinesBrambleDev.v1alpha1.Pipeline[] =
+      response?.body?.items.map((pl: pipelinesBrambleDev.v1alpha1.Pipeline) => {
+        return new pipelinesBrambleDev.v1alpha1.Pipeline(pl);
+      });
     return pls;
   } catch (err: any) {
     const ret = new Error(err.message);
