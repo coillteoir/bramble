@@ -11,6 +11,7 @@
         "release": "tsc && vite optimize"
     },
     "dependencies": {
+        "kubernetes-models": "^4.3.1",
         "solid-js": "^1.7.8"
     },
     "devDependencies": {
