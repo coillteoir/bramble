@@ -1,6 +1,6 @@
 import { createSignal, For } from "solid-js";
 import { PipelineView } from "./PipelineView.tsx";
-import { Pipeline } from "./bramble_types";
+import { pipelinesBrambleDev } from "./bramble-types";
 
 const App = () => {
     const [pipelines, setData] = createSignal<Pipeline[]>(
@@ -28,9 +28,7 @@ const App = () => {
             <header class="">
                 <h1 class="">Bramble</h1>
                 <ul class="">
-                    <li class="">
-                        Pipelines
-                    </li>
+                    <li class="">Pipelines</li>
                     <li class="">Tasks</li>
                 </ul>
             </header>

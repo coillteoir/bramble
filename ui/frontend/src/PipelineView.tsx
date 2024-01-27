@@ -1,4 +1,4 @@
-import { Pipeline, PLtask } from "./bramble_types.ts";
+import { pipelineBrambleDev } from "./bramble-types";
 import { Component, For } from "solid-js";
 
 const PipelineView: Component<{ pipeline: Pipeline }> = (props: {
@@ -29,7 +29,7 @@ const PLTaskView: Component<{ task: PLtask; pipeline: Pipeline }> = (props: {
         <div class="">
             {!task.spec.dependencies && <h3 class="">{task.name}</h3>}
             {task.spec.dependencies && (
-                <details open class="">
+                <details class="">
                     <summary>{task.name}</summary>
                     <ul>
                         <For each={task.spec.dependencies}>
