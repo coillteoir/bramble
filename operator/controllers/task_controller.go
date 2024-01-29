@@ -40,13 +40,15 @@ type TaskReconciler struct {
 
 func (r *TaskReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
-
+	logger := log.Log.WithName("task_logs")
 	task := &pipelinesv1alpha1.Task{}
+
 	err := r.Get(ctx, req.NamespacedName, task)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	log.Log.WithName("task_logs").Info(fmt.Sprintf("Image: %v Command: %v", task.Spec.Image, task.Spec.Command))
+
+	logger.Info(fmt.Sprintf("Image: %v Command: %v", task.Spec.Image, task.Spec.Command))
 
 	return ctrl.Result{}, nil
 }

@@ -14,15 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-/*
-   TODO: Implement proper logging
-   TODO: Handle errors correctly
-*/
-
 package controllers
 
 import (
-	//	"container/list"
 	"context"
 	"fmt"
 	"slices"
@@ -62,7 +56,7 @@ func executeUsingDfs(ctx context.Context,
 	podList *corev1.PodList,
 	pvc *corev1.PersistentVolumeClaim,
 ) error {
-	logger := log.Log.WithName("execution_logs")
+	logger := log.Log.WithName(fmt.Sprintf("Execution: %v", execution.ObjectMeta.Name))
 
 	visited[start] = true
 
@@ -81,6 +75,7 @@ func executeUsingDfs(ctx context.Context,
 			case corev1.PodSucceeded:
 				if start == 0 {
 					execution.Status.Completed = true
+
 					err := reconciler.Status().Update(ctx, execution)
 					if err != nil {
 						return err
@@ -89,33 +84,34 @@ func executeUsingDfs(ctx context.Context,
 
 				return nil
 			case corev1.PodFailed:
-				return fmt.Errorf("Pod: %v failed", pod.ObjectMeta.Name)
+				return fmt.Errorf("pod: %v failed", pod.ObjectMeta.Name)
 			}
 		}
 	}
-	// TODO make sure pods belong to the same execution
+
 	logger.Info(fmt.Sprintf("Checking dependencies of task: %v", task.Name))
-	// Check dependencies have ran before running.
+	// Check dependencies have completed before running task.
 	count := len(task.Spec.Dependencies)
+
 	for _, dep := range task.Spec.Dependencies {
 		for _, pod := range podList.Items {
-			if pod.ObjectMeta.Labels["bramble-execution"] == execution.ObjectMeta.Name && pod.ObjectMeta.Labels["bramble-task"] == dep {
-				if pod.Status.Phase == corev1.PodSucceeded {
-					logger.Info(fmt.Sprintf("Task: %v, Dependency: %v, Count: %v", task.Name, dep, count))
-					count--
-				}
+			if pod.ObjectMeta.Labels["bramble-execution"] == execution.ObjectMeta.Name &&
+				pod.ObjectMeta.Labels["bramble-task"] == dep &&
+				pod.Status.Phase == corev1.PodSucceeded {
+				count--
 			}
 		}
+		logger.Info(fmt.Sprintf("Task: %v, Dependency: %v, Count: %v", task.Name, dep, count))
 	}
+
 	// BUG: When running controller-manger in cluster, pods are created multiple times and executions do not work
 	if count == 0 {
 		logger.Info(fmt.Sprintf("Executing task: %v", task.Name))
+
 		err := runTask(ctx, reconciler, execution, &task, pvc)
 		if err != nil {
 			return err
 		}
-
-		return nil
 	}
 
 	for i, node := range matrix[start] {
@@ -140,7 +136,13 @@ func executeUsingDfs(ctx context.Context,
 	return nil
 }
 
-func runTask(ctx context.Context, r *ExecutionReconciler, execution *pipelinesv1alpha1.Execution, task *pipelinesv1alpha1.PLTask, pvc *corev1.PersistentVolumeClaim) error {
+func runTask(
+	ctx context.Context,
+	r *ExecutionReconciler,
+	execution *pipelinesv1alpha1.Execution,
+	task *pipelinesv1alpha1.PLTask,
+	pvc *corev1.PersistentVolumeClaim,
+) error {
 	if pvc == nil {
 		return fmt.Errorf("NO PVC for pod")
 	}
@@ -189,8 +191,14 @@ func runTask(ctx context.Context, r *ExecutionReconciler, execution *pipelinesv1
 	return nil
 }
 
-func initExecution(ctx context.Context, r *ExecutionReconciler, execution *pipelinesv1alpha1.Execution, pv *corev1.PersistentVolume, pvc *corev1.PersistentVolumeClaim) error {
-	logger := log.Log.WithName("execution_logs")
+func initExecution(
+	ctx context.Context,
+	r *ExecutionReconciler,
+	execution *pipelinesv1alpha1.Execution,
+	pv *corev1.PersistentVolume,
+	pvc *corev1.PersistentVolumeClaim,
+) error {
+	logger := log.Log.WithName(fmt.Sprintf("Execution: %v", execution.ObjectMeta.Name))
 	if !execution.Status.VolumeProvisioned {
 		logger.Info("Provisioning PV")
 
@@ -241,11 +249,12 @@ func initExecution(ctx context.Context, r *ExecutionReconciler, execution *pipel
 				},
 			},
 		}
-		err = r.Create(ctx, pvc)
 
+		err = r.Create(ctx, pvc)
 		if err != nil {
 			return err
 		}
+
 		logger.Info("Provisioning Cloner Pod")
 	}
 

@@ -44,6 +44,7 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	_ = log.FromContext(ctx)
 
 	pipeline := &pipelinesv1alpha1.Pipeline{}
+
 	err := r.Get(ctx, req.NamespacedName, pipeline)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -51,6 +52,7 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	log.Log.WithName("pipeline_logs").
 		Info(fmt.Sprintf("Name: %v", pipeline.ObjectMeta.Name))
+
 	if !pipeline.Status.TasksCreated {
 		for _, task := range pipeline.Spec.Tasks {
 			err = r.Create(ctx, &pipelinesv1alpha1.Task{
@@ -63,39 +65,48 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			if err != nil {
 				return ctrl.Result{}, err
 			}
-
 		}
 	}
+
 	pipeline.Status.TasksCreated = true
+
 	err = validateDependencies(pipeline)
 	if err != nil {
 		log.Log.WithName("pipeline logs").Error(err, "invalid dependencies")
+
 		return ctrl.Result{}, err
 	}
+
 	err = r.Status().Update(ctx, pipeline)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
+
 	return ctrl.Result{}, nil
 }
 
 func validateDependencies(pipeline *pipelinesv1alpha1.Pipeline) error {
 	deps := make([]string, 0)
+
 	for _, task := range pipeline.Spec.Tasks {
 		if slices.Contains(task.Spec.Dependencies, task.Name) {
 			return fmt.Errorf("%v cannot contain itself as a dependency", task.Name)
 		}
+
 		deps = append(deps, task.Spec.Dependencies...)
 	}
 	// Check all dependencies are valid tasks
 	for _, dep := range deps {
 		depflag := false
+
 		for _, task := range pipeline.Spec.Tasks {
 			if dep == task.Name {
 				depflag = true
+
 				break
 			}
 		}
+
 		if !depflag {
 			return fmt.Errorf("Invalid dependency: %v. Not referenced in the pipeline. Please apply the task to the cluster, or describe it within the pipeline", dep)
 		}

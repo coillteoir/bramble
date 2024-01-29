@@ -49,23 +49,25 @@ const executionFinalizer = "executions.pipelines.bramble.dev/finalizer"
 
 func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
-	logger := log.Log.WithName("execution_logs")
 
 	execution := &pipelinesv1alpha1.Execution{}
+
 	err := reconciler.Get(ctx, req.NamespacedName, execution)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
+	logger := log.Log.WithName(fmt.Sprintf("Execution: %v", execution.ObjectMeta.Name))
+
 	if execution.Status.Error {
 		logger.Error(err, "Execution in failed state")
+
 		return ctrl.Result{}, err
 	}
 
 	isExecutionMarkedToBeDeleted := execution.GetDeletionTimestamp() != nil
 
 	if isExecutionMarkedToBeDeleted {
-
 		if controllerutil.ContainsFinalizer(execution, executionFinalizer) {
 			err = teardownExecution(ctx, reconciler, execution)
 
@@ -78,6 +80,7 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	if execution.Status.Completed {
+		logger.Info("Completed!")
 		return ctrl.Result{}, nil
 	}
 
@@ -93,6 +96,7 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	if !pipeline.Status.ValidDeps {
 		logger.Info("Invalid dependency tree in pipeline")
+
 		return ctrl.Result{}, errors.New("invalid pipeline")
 	}
 
@@ -110,16 +114,14 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, err
 	}
 
-	if len(pvList.Items) > 0 {
-		for _, p := range pvList.Items {
-			if p.ObjectMeta.Name == execution.ObjectMeta.Name+"-pv" {
-				if p.Status.Phase == corev1.VolumeBound || p.Status.Phase == corev1.VolumeAvailable {
-					execution.Status.VolumeProvisioned = true
-					err = reconciler.Status().Update(ctx, execution)
+	for _, p := range pvList.Items {
+		if p.ObjectMeta.Name == execution.ObjectMeta.Name+"-pv" {
+			if p.Status.Phase == corev1.VolumeBound || p.Status.Phase == corev1.VolumeAvailable {
+				execution.Status.VolumeProvisioned = true
+				err = reconciler.Status().Update(ctx, execution)
 
-					if err != nil {
-						return ctrl.Result{}, err
-					}
+				if err != nil {
+					return ctrl.Result{}, err
 				}
 			}
 		}
@@ -147,15 +149,16 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-		for _, p := range pvcList.Items {
+		for i, p := range pvcList.Items {
 			if p.ObjectMeta.Labels["bramble-execution"] == execution.ObjectMeta.Name {
-				pvc = &p
+				pvc = &pvcList.Items[i]
 			}
 		}
 	}
 
 	if err != nil {
 		logger.Error(err, "Couldn't update execution")
+
 		return ctrl.Result{}, err
 	}
 
@@ -220,14 +223,14 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	if !controllerutil.ContainsFinalizer(execution, executionFinalizer) {
 		controllerutil.AddFinalizer(execution, executionFinalizer)
-		err = reconciler.Update(ctx, execution)
 
+		err = reconciler.Update(ctx, execution)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
-	return ctrl.Result{RequeueAfter: time.Duration(2 * time.Second)}, nil
+	return ctrl.Result{RequeueAfter: time.Duration(30 * time.Second)}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

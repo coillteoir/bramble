@@ -47,8 +47,8 @@ func teardownExecution(ctx context.Context, reconciler *ExecutionReconciler, exe
 		return err
 	}
 
-	for _, pod := range exePods.Items {
-		err := reconciler.Client.Delete(ctx, &pod)
+	for i := range exePods.Items {
+		err = reconciler.Client.Delete(ctx, &exePods.Items[i])
 		if err != nil {
 			return err
 		}
@@ -71,8 +71,8 @@ func teardownExecution(ctx context.Context, reconciler *ExecutionReconciler, exe
 		return err
 	}
 
-	for _, pvc := range pvcList.Items {
-		err = reconciler.Client.Delete(ctx, &pvc)
+	for i := range pvcList.Items {
+		err = reconciler.Client.Delete(ctx, &pvcList.Items[i])
 
 		if err != nil {
 			return err
@@ -86,10 +86,10 @@ func teardownExecution(ctx context.Context, reconciler *ExecutionReconciler, exe
 		return err
 	}
 
-	for _, pv := range pvList.Items {
+	for i, pv := range pvList.Items {
 		if pv.ObjectMeta.Name == execution.ObjectMeta.Name+"-pv" {
-			err = reconciler.Client.Delete(ctx, &pv)
 
+			err = reconciler.Client.Delete(ctx, &pvList.Items[i])
 			if err != nil {
 				return err
 			}
