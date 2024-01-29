@@ -230,7 +230,7 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 		}
 	}
 
-	return ctrl.Result{RequeueAfter: time.Duration(30 * time.Second)}, nil
+	return ctrl.Result{RequeueAfter: time.Duration(1 * time.Second)}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
