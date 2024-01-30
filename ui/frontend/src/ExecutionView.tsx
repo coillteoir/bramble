@@ -1,7 +1,7 @@
 import { Pipeline, PLtask } from "./bramble_types.ts";
 import { Component, For } from "solid-js";
 
-const PipelineView: Component<{ pipeline: Pipeline }> = (props: {
+const ExecutionView: Component<{ pipeline: Pipeline }> = (props: {
     pipeline: Pipeline;
 }) => {
     const pl: Pipeline = props.pipeline;
@@ -12,17 +12,17 @@ const PipelineView: Component<{ pipeline: Pipeline }> = (props: {
             <h2 class=""> Tasks </h2>
             <ul class="">
                 {pl.spec.tasks && (
-                    <PLTaskView task={pl.spec?.tasks[0]} pipeline={pl} />
+                    <ExecutingTaskView task={pl.spec?.tasks[0]} pipeline={pl} />
                 )}
             </ul>
         </div>
     );
 };
 
-const PLTaskView: Component<{ task: PLtask; pipeline: Pipeline }> = (props: {
+const ExecutingTaskView: Component<{
     task: PLtask;
     pipeline: Pipeline;
-}) => {
+}> = (props: { task: PLtask; pipeline: Pipeline }) => {
     const task: PLtask = props.task;
     const pipeline: Pipeline = props.pipeline;
     return (
@@ -41,7 +41,7 @@ const PLTaskView: Component<{ task: PLtask; pipeline: Pipeline }> = (props: {
                                 return (
                                     task0 && (
                                         <li class="">
-                                            <PLTaskView
+                                            <ExecutingTaskView
                                                 task={task0}
                                                 pipeline={pipeline}
                                             />
@@ -57,4 +57,4 @@ const PLTaskView: Component<{ task: PLtask; pipeline: Pipeline }> = (props: {
     );
 };
 
-export { PipelineView };
+export { ExecutionView };

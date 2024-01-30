@@ -12,30 +12,42 @@ if (process.env.IN_CLUSTER === "1") {
   console.log("Connecting to cluster via kubeconfig");
 }
 
-const k8sCRDApi = kc.makeApiClient(k8s.CustomObjectsApi);
+const k8sCRDAPI = kc.makeApiClient(k8s.CustomObjectsApi);
+const k8sCoreAPI = kc.makeApiClient(k8s.CoreV1Api);
 
-export const getPL = async (ns: string): Promise<Pipeline[] | Error> => {
+export const getPipelines = async (ns: string): Promise<Pipeline[] | Error> => {
   try {
-    const response = await k8sCRDApi.listNamespacedCustomObject(
+    const response = await k8sCRDAPI.listNamespacedCustomObject(
       "pipelines.bramble.dev",
       "v1alpha1",
       ns,
       "pipelines",
     );
-    const pls: Pipeline[] = response?.body?.items.map((pl: any) => {
+    const pipelines: Pipeline[] = response?.body?.items.map((pipeline: any) => {
       return new Pipeline(
-        { name: pl.metadata.name, namespace: ns },
+        { name: pipeline.metadata.name, namespace: ns },
         {
-          tasks: pl.spec.tasks.map((task: any) => {
+          tasks: pipeline.spec.tasks.map((task: any) => {
             return new PLtask(task.name, task.spec);
           }),
         },
       );
     });
-    return pls;
+    return pipelines;
   } catch (err: any) {
     const ret = new Error(err.message);
     throw ret;
     return ret;
   }
 };
+
+export const getPods = async (ns: string): Promise<any> => {
+    try {
+        const response = await k8sCoreAPI.listNamespacedPod(ns)
+        return response.body
+    } catch (err: any) {
+        const ret = new Error(err.message)
+        throw ret
+        return ret
+    }
+}
