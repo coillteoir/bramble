@@ -205,9 +205,8 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	visited := make([]bool, len(matrix))
 
-	if execution.Status.VolumeProvisioned && execution.Status.RepoCloned {
-		err = executeUsingDfs(ctx,
-			reconciler,
+	if execution.Status.VolumeProvisioned && execution.Status.RepoCloned && !execution.Status.Completed {
+		podsToExecute, err := executeUsingDfs(
 			matrix,
 			0,
 			visited,
@@ -223,6 +222,18 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 				return ctrl.Result{}, err
 			}
 			return ctrl.Result{}, err
+		}
+		if podsToExecute == nil && err == nil {
+			if execution.Status.Completed {
+				err = reconciler.Update(ctx, execution)
+				if err != nil {
+					return ctrl.Result{}, err
+				}
+			}
+		}
+
+		for _, pod := range podsToExecute {
+			reconciler.Client.Create(ctx, pod)
 		}
 	}
 
