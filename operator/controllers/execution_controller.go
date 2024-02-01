@@ -217,6 +217,11 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 			pvc,
 		)
 		if err != nil {
+			execution.Status.Error = true
+			err = reconciler.Update(ctx, execution)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
 			return ctrl.Result{}, err
 		}
 	}

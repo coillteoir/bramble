@@ -1,0 +1,8 @@
+apiVersion: pipelines.bramble.dev/v1alpha1
+kind: Execution
+metadata:
+  name: one-to-many
+spec:
+  repo: https://github.com/coillteoir/ctml
+  branch: master
+  pipeline: one-to-many

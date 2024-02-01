@@ -69,10 +69,34 @@ func executeUsingDfs(ctx context.Context,
 		if pod.ObjectMeta.Labels["bramble-task"] == task.Name {
 			switch pod.Status.Phase {
 			case corev1.PodRunning:
+				logger.Info(
+					fmt.Sprintf(
+						"Execution: %v Task: %v Running",
+						execution.ObjectMeta.Name,
+						task.Name,
+					),
+				)
+
 				return nil
 			case corev1.PodPending:
+				logger.Info(
+					fmt.Sprintf(
+						"Execution: %v Task: %v Pending",
+						execution.ObjectMeta.Name,
+						task.Name,
+					),
+				)
+
 				return nil
 			case corev1.PodSucceeded:
+				logger.Info(
+					fmt.Sprintf(
+						"Execution: %v Task: %v Succeeded",
+						execution.ObjectMeta.Name,
+						task.Name,
+					),
+				)
+
 				if start == 0 {
 					execution.Status.Completed = true
 
@@ -84,6 +108,14 @@ func executeUsingDfs(ctx context.Context,
 
 				return nil
 			case corev1.PodFailed:
+				logger.Info(
+					fmt.Sprintf(
+						"Execution: %v Task: %v Failed",
+						execution.ObjectMeta.Name,
+						task.Name,
+					),
+				)
+
 				return fmt.Errorf("pod: %v failed", pod.ObjectMeta.Name)
 			}
 		}
@@ -101,7 +133,15 @@ func executeUsingDfs(ctx context.Context,
 				count--
 			}
 		}
-		logger.Info(fmt.Sprintf("Task: %v, Dependency: %v, Count: %v", task.Name, dep, count))
+
+		logger.Info(
+			fmt.Sprintf(
+				"Task: %v, Dependency: %v, Count: %v",
+				task.Name,
+				dep,
+				count,
+			),
+		)
 	}
 
 	// BUG: When running controller-manger in cluster, pods are created multiple times and executions do not work
@@ -112,10 +152,21 @@ func executeUsingDfs(ctx context.Context,
 		if err != nil {
 			return err
 		}
+
+		return nil
+	} else if count < 0 {
+		return fmt.Errorf("execution: %v has created too many pods", execution.ObjectMeta.Name)
 	}
 
 	for i, node := range matrix[start] {
 		if node == 1 && !visited[i] {
+			logger.Info(
+				fmt.Sprintf(
+					"recursing to dependency %v of task %v",
+					pipeline.Spec.Tasks[i].Name,
+					task.Name,
+				),
+			)
 			err := executeUsingDfs(
 				ctx,
 				reconciler,
@@ -146,7 +197,13 @@ func runTask(
 	if pvc == nil {
 		return fmt.Errorf("NO PVC for pod")
 	}
-
+	logger := log.Log.WithName(
+		fmt.Sprintf(
+			"Execution: %v Task: %v",
+			execution.ObjectMeta.Name,
+			task.Name,
+		),
+	)
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: execution.ObjectMeta.Name + "-" + task.Name + "-",
@@ -168,6 +225,7 @@ func runTask(
 							MountPath: "/src/",
 						},
 					},
+					WorkingDir: "/src/" + execution.ObjectMeta.Name,
 				},
 			},
 			Volumes: []corev1.Volume{
@@ -183,10 +241,14 @@ func runTask(
 		},
 	}
 
+	logger.Info("Provisioning pod")
+
 	err := r.Create(ctx, pod)
 	if err != nil {
 		return err
 	}
+
+	logger.Info("Pod Provisioned")
 
 	return nil
 }
@@ -217,7 +279,7 @@ func initExecution(
 				StorageClassName: "standard",
 				PersistentVolumeSource: corev1.PersistentVolumeSource{
 					HostPath: &corev1.HostPathVolumeSource{
-						Path: "/src",
+						Path: "/src/" + execution.ObjectMeta.Name,
 					},
 				},
 			},
@@ -259,7 +321,6 @@ func initExecution(
 	}
 
 	if !execution.Status.RepoCloned {
-
 		clonePod := &corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      execution.ObjectMeta.Name + "-cloner",
@@ -275,15 +336,16 @@ func initExecution(
 							"git",
 							"clone",
 							execution.Spec.Repo,
-							"/src/",
 							"--branch=" + execution.Spec.Branch,
+							execution.ObjectMeta.Name,
 						},
 						VolumeMounts: []corev1.VolumeMount{
 							{
 								Name:      "cloner-volume",
-								MountPath: "/src/",
+								MountPath: "/src/" + execution.ObjectMeta.Name,
 							},
 						},
+						WorkingDir: "/src/" + execution.ObjectMeta.Name,
 					},
 				},
 				Volumes: []corev1.Volume{

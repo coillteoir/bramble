@@ -1,0 +1,36 @@
+apiVersion: pipelines.bramble.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: one-to-many
+spec:
+  tasks:
+    - name: arm
+      spec:
+        image: ubuntu
+        command:
+        - sleep
+        - "10"
+        dependencies:
+        - lint
+    - name: x86
+      spec:
+        image: ubuntu
+        command: ["sleep", "3"]
+        dependencies: 
+        - lint
+    - name: risc-v
+      spec:
+        image: ubuntu
+        command: ["sleep", "5"]
+        dependencies:
+         - lint
+    - name: mips
+      spec:
+        image: ubuntu
+        command: ["sleep", "7"]
+        dependencies:
+        - lint
+    - name: lint
+      spec:
+        image: ubuntu
+        command: ["sleep", "9"]

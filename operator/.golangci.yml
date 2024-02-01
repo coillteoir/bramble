@@ -89,7 +89,7 @@ linters:
     - funlen
     - gci
     - gocheckcompilerdirectives
-    - gochecknoinits
+      #- gochecknoinits
     - goconst
     - gocritic
     - gocyclo

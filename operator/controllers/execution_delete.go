@@ -88,7 +88,6 @@ func teardownExecution(ctx context.Context, reconciler *ExecutionReconciler, exe
 
 	for i, pv := range pvList.Items {
 		if pv.ObjectMeta.Name == execution.ObjectMeta.Name+"-pv" {
-
 			err = reconciler.Client.Delete(ctx, &pvList.Items[i])
 			if err != nil {
 				return err
