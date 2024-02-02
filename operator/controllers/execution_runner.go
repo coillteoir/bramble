@@ -71,18 +71,19 @@ func executeUsingDfs(
 			baseStr := fmt.Sprintf("Execution: %v Task: %v", execution.ObjectMeta.Name, task.Name)
 
 			switch pod.Status.Phase {
-			case corev1.PodRunning:
+			case corev1.PodRunning, corev1.PodPending:
 				logger.Info(fmt.Sprintf("%v %v", baseStr, pod.Status.Phase))
-				return nil, nil
-			case corev1.PodPending:
-				logger.Info(fmt.Sprintf("%v %v", baseStr, pod.Status.Phase))
+
 				return nil, nil
 			case corev1.PodSucceeded:
 				logger.Info(fmt.Sprintf("%v %v", baseStr, pod.Status.Phase))
+
 				if start == 0 {
 					execution.Status.Completed = true
+
 					return nil, nil
 				}
+
 				return nil, nil
 			case corev1.PodFailed:
 				logger.Info(fmt.Sprintf("%v %v", baseStr, pod.Status.Phase))
@@ -139,6 +140,7 @@ func executeUsingDfs(
 					task.Name,
 				),
 			)
+
 			downstreamPods, err := executeUsingDfs(
 				matrix,
 				i,
@@ -151,6 +153,7 @@ func executeUsingDfs(
 			if err != nil {
 				return nil, err
 			}
+
 			podsToExecute = append(podsToExecute, downstreamPods...)
 		}
 	}
@@ -165,6 +168,7 @@ func runTask(
 	if pvc == nil {
 		return nil, fmt.Errorf("NO PVC for pod")
 	}
+
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: execution.ObjectMeta.Name + "-" + task.Name + "-",
@@ -183,10 +187,10 @@ func runTask(
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      "cloner-volume",
-							MountPath: "/src/",
+							MountPath: sourceRoot,
 						},
 					},
-					WorkingDir: "/src/" + execution.ObjectMeta.Name,
+					WorkingDir: sourceRoot + execution.ObjectMeta.Name,
 				},
 			},
 			Volumes: []corev1.Volume{

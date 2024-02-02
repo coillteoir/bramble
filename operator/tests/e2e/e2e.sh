@@ -42,20 +42,20 @@ fi
 
 echo "RUNNING TEST: ONE-TO-MANY PIPELINE"
 
-SLEEPY_PODS=$(kubectl get po \
+ONE_TO_MANY_PODS=$(kubectl get po \
 -l=bramble-execution=one-to-many \
 -o jsonpath='{.items[*].metadata.name}')
 
-echo "$SLEEPY_PODS"
+echo "$ONE_TO_MANY_PODS"
 
-if [ $(echo "$SLEEPY_PODS" | wc -w) -eq '6' ] 
+if [ $(echo "$ONE_TO_MANY_PODS" | wc -w) -eq '6' ] 
     then echo "Correct amount of pods have been created." 
     else echo "Incorrect amount of pods created." && kind delete cluster --name=bramble-sleepy-cluster && false
 fi
 
 kubectl delete pipeline sleepy
 kubectl delete execution sleepytest
-kubectl delete pipeline simple
-kubectl delete execution simple
+kubectl delete pipeline simple-test
+kubectl delete execution simple-test
 kubectl delete pipeline one-to-many
 kubectl delete execution one-to-many

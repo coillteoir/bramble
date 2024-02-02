@@ -45,7 +45,11 @@ type ExecutionReconciler struct {
 //+kubebuilder:rbac:groups=pipelines.bramble.dev,resources=executions/finalizers,verbs=update
 //+kubebuilder:rbac:groups="",resources=pods;persistentvolumes;persistentvolumeclaims,verbs=create;delete;list;get
 
-const executionFinalizer = "executions.pipelines.bramble.dev/finalizer"
+const (
+	executionFinalizer = "executions.pipelines.bramble.dev/finalizer"
+	sourceRoot         = "/src/"
+	pvSuffix           = "-pv"
+)
 
 func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
@@ -115,7 +119,7 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	for _, p := range pvList.Items {
-		if p.ObjectMeta.Name == execution.ObjectMeta.Name+"-pv" {
+		if p.ObjectMeta.Name == execution.ObjectMeta.Name+pvSuffix {
 			if p.Status.Phase == corev1.VolumeBound || p.Status.Phase == corev1.VolumeAvailable {
 				execution.Status.VolumeProvisioned = true
 				err = reconciler.Status().Update(ctx, execution)
@@ -205,7 +209,9 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	visited := make([]bool, len(matrix))
 
-	if execution.Status.VolumeProvisioned && execution.Status.RepoCloned && !execution.Status.Completed {
+	if execution.Status.VolumeProvisioned &&
+		execution.Status.RepoCloned &&
+		!execution.Status.Completed {
 		podsToExecute, err := executeUsingDfs(
 			matrix,
 			0,
@@ -217,23 +223,20 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 		)
 		if err != nil {
 			execution.Status.Error = true
-			err = reconciler.Update(ctx, execution)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
+
 			return ctrl.Result{}, err
-		}
-		if podsToExecute == nil && err == nil {
-			if execution.Status.Completed {
-				err = reconciler.Update(ctx, execution)
-				if err != nil {
-					return ctrl.Result{}, err
-				}
-			}
 		}
 
 		for _, pod := range podsToExecute {
-			reconciler.Client.Create(ctx, pod)
+			err = reconciler.Client.Create(ctx, pod)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+
+		err = reconciler.Update(ctx, execution)
+		if err != nil {
+			return ctrl.Result{}, err
 		}
 	}
 

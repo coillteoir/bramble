@@ -40,7 +40,7 @@ func initExecution(
 
 		pv = &corev1.PersistentVolume{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:   execution.ObjectMeta.Name + "-pv",
+				Name:   execution.ObjectMeta.Name + pvSuffix,
 				Labels: map[string]string{"bramble-execution": execution.ObjectMeta.Name},
 			},
 			Spec: corev1.PersistentVolumeSpec{
@@ -53,7 +53,7 @@ func initExecution(
 				StorageClassName: "standard",
 				PersistentVolumeSource: corev1.PersistentVolumeSource{
 					HostPath: &corev1.HostPathVolumeSource{
-						Path: "/src/" + execution.ObjectMeta.Name,
+						Path: sourceRoot + execution.ObjectMeta.Name,
 					},
 				},
 			},
@@ -116,10 +116,10 @@ func initExecution(
 						VolumeMounts: []corev1.VolumeMount{
 							{
 								Name:      "cloner-volume",
-								MountPath: "/src/" + execution.ObjectMeta.Name,
+								MountPath: sourceRoot + execution.ObjectMeta.Name,
 							},
 						},
-						WorkingDir: "/src/" + execution.ObjectMeta.Name,
+						WorkingDir: sourceRoot + execution.ObjectMeta.Name,
 					},
 				},
 				Volumes: []corev1.Volume{
