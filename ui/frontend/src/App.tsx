@@ -1,17 +1,22 @@
-import { createSignal, For } from "solid-js";
 import { PipelineView } from "./PipelineView.tsx";
 import { Pipeline } from "./bramble_types";
+import "reactflow/dist/style.css";
+import { useState } from "react";
 
 const App = () => {
-    const [pipelines, setData] = createSignal<Pipeline[]>(
+    const [namespace, setNamespace] = useState<string>("default");
+    const [pipelines, setPipelines] = useState<Pipeline[]>(
         new Array<Pipeline>()
     );
-    const fetchData = async (ns: string) => {
+    const nsinput: any = <input className="" type="text" />;
+
+    const fetchNamespacedPipelines = async (namespace: string) => {
+        console.log("Fetching pipelines in:", namespace);
         try {
-            await fetch("http://localhost:5555/pipelines/" + ns)
+            await fetch("http://localhost:5555/pipelines/" + namespace)
                 .then((response) => response.json())
                 .then((jsonData) => {
-                    setData(
+                    setPipelines(
                         jsonData.map(
                             (pipeline: Pipeline) =>
                                 new Pipeline(pipeline.metadata, pipeline.spec)
@@ -22,30 +27,52 @@ const App = () => {
             console.error(error);
         }
     };
-    const nsinput: any = <input class="" type="text" value="default" />;
+
+    const fetchNamespacedPods = async (namespace: string) => {
+        console.log("Fetching pods in:", namespace);
+        try {
+            await fetch("http://localhost:5555/pods/" + namespace)
+                .then((response) => response.json())
+                .then((jsonData) => {
+                    console.log(jsonData);
+                });
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    setInterval(fetchNamespacedPods, 10000, namespace);
+    setInterval(fetchNamespacedPipelines, 10000, namespace);
+
     return (
         <>
-            <header class="">
-                <h1 class="">Bramble</h1>
-                <ul class="">
-                    <li class="">
-                        Pipelines
-                    </li>
-                    <li class="">Tasks</li>
+            <header className="">
+                <h1 className="">Bramble</h1>
+                <ul className="">
+                    <li className="">Pipelines</li>
+                    <li className="">Tasks</li>
                 </ul>
             </header>
-            <div class="">
-                <label class="">Namespace:</label>
+            <div className="">
+                <label className="">Namespace:</label>
                 {nsinput}
 
-                <button class="btn" onClick={() => fetchData(nsinput?.value)}>
+                <button
+                    className=""
+                    onClick={() => setNamespace(nsinput.value)}
+                >
                     Get pipelines
                 </button>
 
-                <h1>{pipelines()[0]?.metadata.namespace}</h1>
-                <For each={pipelines()}>
-                    {(pl: Pipeline) => pl && <PipelineView pipeline={pl} />}
-                </For>
+                {pipelines.length !== 0 && (
+                    <h1>
+                        Pipelines in the {pipelines[0]?.metadata.namespace}{" "}
+                        namespace
+                    </h1>
+                )}
+                {pipelines.map(
+                    (pl: Pipeline) => pl && <PipelineView pipeline={pl} />
+                )}
             </div>
         </>
     );

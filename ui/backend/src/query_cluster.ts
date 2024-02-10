@@ -26,7 +26,7 @@ export const getPL = async (ns: string): Promise<Pipeline[] | Error> => {
       return new Pipeline(
         { name: pl.metadata.name, namespace: ns },
         {
-          tasks: pl.spec.tasks.map((task: any) => {
+          tasks: pl.spec.tasks.map((task: PLtask) => {
             return new PLtask(task.name, task.spec);
           }),
         },
