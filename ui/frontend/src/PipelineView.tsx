@@ -1,4 +1,4 @@
-import {} from "react";
+import { useEffect } from "react";
 
 import ReactFlow, { useNodesState, useEdgesState, Node, Edge } from "reactflow";
 import Dagre from "@dagrejs/dagre";
@@ -32,10 +32,14 @@ const PipelineView = (props: { pipeline: Pipeline }) => {
     const [edges, setEdges, onEdgesChange] = useEdgesState(
         pl.spec.tasks ? generateEdges(pl.spec.tasks) : ([] as Edge[])
     );
-    //const layouted = getLayoutedElements(nodes, edges);
 
-    //setNodes([...layouted.nodes]);
-    //setEdges([...layouted.edges]);
+    useEffect(() => {
+        const layouted = getLayoutedElements(nodes, edges);
+
+        setNodes([...layouted.nodes]);
+        setEdges([...layouted.edges]);
+    });
+
     return (
         <>
             <h2 className="">Pipeline: {pl.metadata.name}</h2>
@@ -51,6 +55,8 @@ const PipelineView = (props: { pipeline: Pipeline }) => {
                     nodes={nodes}
                     edges={edges}
                     fitView={true}
+                    onNodesChange={onNodesChange}
+                    onEdgesChange={onEdgesChange}
                 ></ReactFlow>
             </div>
         </>
@@ -79,15 +85,17 @@ const generateNodes = (tasks: PLtask[]): Node[] => {
 
 const generateEdges = (tasks: PLtask[]): Edge[] => {
     return tasks
-        .map((task): Edge[] => {
-            return task.spec.dependencies?.map((dep, i): Edge => {
-                return {
-                    id: task.name + i.toString(),
-                    target: task.name,
-                    source: dep,
-                    type: "output",
-                };
-            });
+        .map((task: PLtask): Edge[] => {
+            return task.spec.dependencies
+                ? task.spec.dependencies.map((dep, i): Edge => {
+                      return {
+                          id: task.name + i.toString(),
+                          target: task.name,
+                          source: dep,
+                          type: "output",
+                      };
+                  })
+                : ([] as Edge[]);
         })
         .flat();
 };
