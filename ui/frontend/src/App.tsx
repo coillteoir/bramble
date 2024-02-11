@@ -1,14 +1,15 @@
 import { PipelineView } from "./PipelineView.tsx";
 import { Pipeline } from "./bramble_types";
 import "reactflow/dist/style.css";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const App = () => {
     const [namespace, setNamespace] = useState<string>("default");
     const [pipelines, setPipelines] = useState<Pipeline[]>(
         new Array<Pipeline>()
     );
-    const nsinput: any = <input className="" type="text" />;
+
+    const inputRef = useRef<HTMLInputElement>(null)
 
     const fetchNamespacedPipelines = async (namespace: string) => {
         console.log("Fetching pipelines in:", namespace);
@@ -41,8 +42,13 @@ const App = () => {
         }
     };
 
-    setInterval(fetchNamespacedPods, 10000, namespace);
-    setInterval(fetchNamespacedPipelines, 10000, namespace);
+    //setInterval(fetchNamespacedPods, 10000, namespace);
+    //setInterval(fetchNamespacedPipelines, 10000, namespace);
+
+    useEffect(() => {
+        fetchNamespacedPods(namespace);
+        fetchNamespacedPipelines(namespace);
+    });
 
     return (
         <>
@@ -50,16 +56,21 @@ const App = () => {
                 <h1 className="">Bramble</h1>
                 <ul className="">
                     <li className="">Pipelines</li>
-                    <li className="">Tasks</li>
                 </ul>
             </header>
             <div className="">
                 <label className="">Namespace:</label>
-                {nsinput}
+                <input className="" type="text" ref={inputRef} />
 
                 <button
                     className=""
-                    onClick={() => setNamespace(nsinput.value)}
+                    onClick={() => {
+                        const ns: string | undefined = inputRef.current?.value;
+                        console.log(ns);
+                        if (ns !== undefined) {
+                            setNamespace(ns);
+                        }
+                    }}
                 >
                     Get pipelines
                 </button>

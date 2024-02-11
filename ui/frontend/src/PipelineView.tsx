@@ -11,7 +11,10 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
     g.setGraph({ rankdir: "TB" });
 
     edges.forEach((edge: Edge) => g.setEdge(edge.source, edge.target));
-    nodes.forEach((node: Node) => g.setNode(node.id, node));
+
+    // any type used because the typing of setNode seems to be incorrect. 
+    // It behaves as expected when entire node is passed in
+    nodes.forEach((node: Node) => g.setNode(node.id, (node as any)));
 
     Dagre.layout(g);
 
