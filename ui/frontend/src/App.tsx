@@ -1,14 +1,18 @@
-import { createSignal, For } from "solid-js";
 import { PipelineView } from "./PipelineView.tsx";
 import { Pipeline } from "./bramble_types";
+import "reactflow/dist/style.css";
+import { useState, useEffect, useRef } from "react";
 
 const App = () => {
-    const [namespace, setNamespace] = createSignal<string>("default");
-
-    const [pipelines, setPipelines] = createSignal<Pipeline[]>(
+    const [namespace, setNamespace] = useState<string>("default");
+    const [pipelines, setPipelines] = useState<Pipeline[]>(
         new Array<Pipeline>()
     );
+
+    const inputRef = useRef<HTMLInputElement>(null)
+
     const fetchNamespacedPipelines = async (namespace: string) => {
+        console.log("Fetching pipelines in:", namespace);
         try {
             await fetch("http://localhost:5555/pipelines/" + namespace)
                 .then((response) => response.json())
@@ -26,6 +30,7 @@ const App = () => {
     };
 
     const fetchNamespacedPods = async (namespace: string) => {
+        console.log("Fetching pods in:", namespace);
         try {
             await fetch("http://localhost:5555/pods/" + namespace)
                 .then((response) => response.json())
@@ -37,39 +42,48 @@ const App = () => {
         }
     };
 
-    setInterval(fetchNamespacedPods, 1000, namespace());
-    setInterval(fetchNamespacedPipelines, 1000, namespace());
+    //setInterval(fetchNamespacedPods, 10000, namespace);
+    //setInterval(fetchNamespacedPipelines, 10000, namespace);
 
-    const nsinput: HTMLInputElement = (
-        <input class="" type="text" />
-    ) as HTMLInputElement;
+    useEffect(() => {
+        fetchNamespacedPods(namespace);
+        fetchNamespacedPipelines(namespace);
+    });
 
     return (
         <>
-            <header class="">
-                <h1 class="">Bramble</h1>
-                <ul class="">
-                    <li class="">Pipelines</li>
-                    <li class="">Tasks</li>
+            <header className="">
+                <h1 className="">Bramble</h1>
+                <ul className="">
+                    <li className="">Pipelines</li>
                 </ul>
             </header>
-            <div class="">
-                <label class="">Namespace:</label>
-                {nsinput}
+            <div className="">
+                <label className="">Namespace:</label>
+                <input className="" type="text" ref={inputRef} />
 
-                <button class="" onClick={() => setNamespace(nsinput.value)}>
+                <button
+                    className=""
+                    onClick={() => {
+                        const ns: string | undefined = inputRef.current?.value;
+                        console.log(ns);
+                        if (ns !== undefined) {
+                            setNamespace(ns);
+                        }
+                    }}
+                >
                     Get pipelines
                 </button>
 
-                {pipelines().length !== 0 && (
+                {pipelines.length !== 0 && (
                     <h1>
-                        Pipelines in the {pipelines()[0]?.metadata.namespace}{" "}
+                        Pipelines in the {pipelines[0]?.metadata.namespace}{" "}
                         namespace
                     </h1>
                 )}
-                <For each={pipelines()}>
-                    {(pl: Pipeline) => pl && <PipelineView pipeline={pl} />}
-                </For>
+                {pipelines.map(
+                    (pl: Pipeline) => pl && <PipelineView pipeline={pl} />
+                )}
             </div>
         </>
     );
