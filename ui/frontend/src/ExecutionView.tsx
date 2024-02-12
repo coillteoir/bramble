@@ -1,60 +1,106 @@
-import { Pipeline, PLtask } from "./bramble_types.ts";
-import { Component, For } from "solid-js";
+import React, { useEffect } from "react";
 
-const ExecutionView: Component<{ pipeline: Pipeline }> = (props: {
-    pipeline: Pipeline;
-}) => {
+import ReactFlow, { useNodesState, useEdgesState, Node, Edge } from "reactflow";
+import Dagre from "@dagrejs/dagre";
+
+import { Pipeline, PLtask } from "./bramble_types.ts";
+
+// https://codesandbox.io/p/sandbox/romantic-bas-z2v5wm?file=%2FApp.js%3A63%2C51&utm_medium=sandpack
+const g = new Dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
+const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
+    g.setGraph({ rankdir: "TB" });
+
+    edges.forEach((edge: Edge) => g.setEdge(edge.source, edge.target));
+
+    // any type used because the typing of setNode seems to be incorrect.
+    // It behaves as expected when entire node is passed in
+    nodes.forEach((node: Node) => g.setNode(node.id, node as any));
+
+    Dagre.layout(g);
+
+    return {
+        nodes: nodes.map((node: Node) => {
+            const { x, y } = g.node(node.id);
+            return { ...node, position: { x, y } };
+        }),
+        edges,
+    };
+};
+
+const ExecutionView = (props: { pipeline: Pipeline }): React.ReactNode => {
     const pl: Pipeline = props.pipeline;
-    console.log(pl);
+    const [nodes, setNodes, onNodesChange] = useNodesState(
+        pl.spec.tasks ? generateNodes(pl.spec.tasks) : ([] as Node[])
+    );
+    const [edges, setEdges, onEdgesChange] = useEdgesState(
+        pl.spec.tasks ? generateEdges(pl.spec.tasks) : ([] as Edge[])
+    );
+
+    useEffect(() => {
+        const layouted = getLayoutedElements(nodes, edges);
+
+        setNodes([...layouted.nodes]);
+        setEdges([...layouted.edges]);
+    });
+
     return (
-        <div class="bg-green-800">
-            <h2 class="">Pipeline: {pl.metadata.name}</h2>
-            <h2 class=""> Tasks </h2>
-            <ul class="">
-                {pl.spec.tasks && (
-                    <ExecutingTaskView task={pl.spec?.tasks[0]} pipeline={pl} />
-                )}
-            </ul>
-        </div>
+        <>
+            <h2 className="">Execution: {pl.metadata.name}</h2>
+            <div
+                className=""
+                style={{
+                    width: "100vw",
+                    height: "50vh",
+                    border: "black 3px",
+                }}
+            >
+                <ReactFlow
+                    nodes={nodes}
+                    edges={edges}
+                    fitView={true}
+                    onNodesChange={onNodesChange}
+                    onEdgesChange={onEdgesChange}
+                ></ReactFlow>
+            </div>
+        </>
     );
 };
 
-const ExecutingTaskView: Component<{
-    task: PLtask;
-    pipeline: Pipeline;
-}> = (props: { task: PLtask; pipeline: Pipeline }) => {
-    const task: PLtask = props.task;
-    const pipeline: Pipeline = props.pipeline;
-    return (
-        <div class="">
-            {!task.spec.dependencies && <h3 class="">{task.name}</h3>}
-            {task.spec.dependencies && (
-                <details open class="">
-                    <summary>{task.name}</summary>
-                    <ul>
-                        <For each={task.spec.dependencies}>
-                            {(dep: string) => {
-                                const task0 = pipeline.spec.tasks?.filter(
-                                    (task) => task.name == dep
-                                )[0];
+const generateNodes = (tasks: PLtask[]): Node[] => {
+    return tasks.map((task: PLtask, i: number): Node => {
+        return {
+            id: task.name,
+            position: { x: 0, y: i * 200 },
+            data: {
+                label: (
+                    <div>
+                        Name: {task.name}
+                        <br></br>
+                        Image: {task.spec.image}
+                        <br></br>
+                        Command: {task.spec.command.join(" ")}
+                    </div>
+                ),
+            },
+        };
+    });
+};
 
-                                return (
-                                    task0 && (
-                                        <li class="">
-                                            <ExecutingTaskView
-                                                task={task0}
-                                                pipeline={pipeline}
-                                            />
-                                        </li>
-                                    )
-                                );
-                            }}
-                        </For>
-                    </ul>
-                </details>
-            )}
-        </div>
-    );
+const generateEdges = (tasks: PLtask[]): Edge[] => {
+    return tasks
+        .map((task: PLtask): Edge[] => {
+            return task.spec.dependencies
+                ? task.spec.dependencies.map((dep, i): Edge => {
+                      return {
+                          id: task.name + i.toString(),
+                          target: task.name,
+                          source: dep,
+                          type: "output",
+                      };
+                  })
+                : ([] as Edge[]);
+        })
+        .flat();
 };
 
 export { ExecutionView };
