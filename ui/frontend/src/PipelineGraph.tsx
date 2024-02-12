@@ -1,3 +1,5 @@
+import { PLtask } from "./bramble_types.ts";
+
 import ReactFlow, { Node, Edge } from "reactflow";
 import Dagre from "@dagrejs/dagre";
 
@@ -45,7 +47,7 @@ export const generateEdges = (tasks: PLtask[]): Edge[] => {
     return tasks
         .map((task: PLtask): Edge[] => {
             return task.spec.dependencies
-                ? task.spec.dependencies.map((dep, i): Edge => {
+                ? task.spec.dependencies.map((dep: string, i: number): Edge => {
                       return {
                           id: task.name + i.toString(),
                           target: dep,

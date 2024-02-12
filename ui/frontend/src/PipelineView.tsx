@@ -5,7 +5,11 @@ import Dagre from "@dagrejs/dagre";
 
 import { Pipeline, PLtask } from "./bramble_types.ts";
 
-import {getLayoutedElements, generateNodes, generateEdges } from "./PipelineGraph.tsx"
+import {
+    getLayoutedElements,
+    generateNodes,
+    generateEdges,
+} from "./PipelineGraph.tsx";
 
 // https://codesandbox.io/p/sandbox/romantic-bas-z2v5wm?file=%2FApp.js%3A63%2C51&utm_medium=sandpack
 const PipelineView = (props: { pipeline: Pipeline }): React.ReactNode => {
@@ -46,7 +50,7 @@ const PipelineView = (props: { pipeline: Pipeline }): React.ReactNode => {
                         style: {
                             "animation-direction": "reverse",
                             stroke: "green",
-                        },
+                        } as any,
                     }}
                 />
             </div>
