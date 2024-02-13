@@ -1,34 +1,25 @@
 module.exports = {
-    env: {
-        browser: true,
-        es2021: true,
-    },
+    root: true,
+    env: { browser: true, es2020: true },
     extends: [
         "eslint:recommended",
         "plugin:@typescript-eslint/recommended",
-        "plugin:solid/typescript",
+        "plugin:react-hooks/recommended",
+        "plugin:react/recommended",
     ],
-    overrides: [
-        {
-            env: {
-                node: true,
-            },
-            files: [".eslintrc.{js,cjs}"],
-            parserOptions: {
-                sourceType: "script",
-            },
-        },
-    ],
+    ignorePatterns: ["dist", ".eslintrc.cjs"],
     parser: "@typescript-eslint/parser",
-    parserOptions: {
-        ecmaVersion: "latest",
-        sourceType: "module",
-    },
-    plugins: ["@typescript-eslint", "solid"],
+    plugins: ["react-refresh", "react-hooks"],
     rules: {
-        indent: ["error", 4],
-        "linebreak-style": ["error", "unix"],
-        quotes: ["error", "double"],
-        semi: ["error", "always"],
+        "react-refresh/only-export-components": [
+            "warn",
+            { allowConstantExport: true },
+        ],
+        "arrow-body-style": ["warn"],
+        "no-shadow": ["error"],
+        "no-unneeded-ternary": ["warn"],
+        "no-unreachable": ["error"],
+        "react-hooks/rules-of-hooks": ["error"],
+        "react-hooks/exhaustive-deps": ["warn"],
     },
 };
