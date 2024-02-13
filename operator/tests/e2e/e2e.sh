@@ -2,6 +2,7 @@
 
 set -e
 
+FAIL=0
 
 kubectl apply -f tests/e2e/resources/one-to-many-execution.yaml
 kubectl apply -f tests/e2e/resources/one-to-many-pipeline.yaml
@@ -23,7 +24,7 @@ echo "$SIMPLE_PODS"
 
 if [ $(echo "$SIMPLE_PODS" | wc -w) -eq '2' ] 
     then echo "Correct amount of pods have been created." 
-    else echo "Incorrect amount of pods created." && kind delete cluster --name=bramble-test-cluster && false
+    else echo "Incorrect amount of pods created." && FAIL=1
 fi
 
 
@@ -37,7 +38,7 @@ echo "$SLEEPY_PODS"
 
 if [ $(echo "$SLEEPY_PODS" | wc -w) -eq '7' ] 
     then echo "Correct amount of pods have been created." 
-    else echo "Incorrect amount of pods created." && kind delete cluster --name=bramble-sleepy-cluster && false
+    else echo "Incorrect amount of pods created." && FAIL=1
 fi
 
 echo "RUNNING TEST: ONE-TO-MANY PIPELINE"
@@ -50,7 +51,7 @@ echo "$ONE_TO_MANY_PODS"
 
 if [ $(echo "$ONE_TO_MANY_PODS" | wc -w) -eq '6' ] 
     then echo "Correct amount of pods have been created." 
-    else echo "Incorrect amount of pods created." && kind delete cluster --name=bramble-sleepy-cluster && false
+    else echo "Incorrect amount of pods created." && FAIL=1
 fi
 
 kubectl delete pipeline sleepy
@@ -59,3 +60,5 @@ kubectl delete pipeline simple-test
 kubectl delete execution simple-test
 kubectl delete pipeline one-to-many
 kubectl delete execution one-to-many
+
+exit $FAIL

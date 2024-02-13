@@ -91,14 +91,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.TaskReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Task")
-		os.Exit(1)
-	}
-
 	if err = (&controllers.PipelineReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),

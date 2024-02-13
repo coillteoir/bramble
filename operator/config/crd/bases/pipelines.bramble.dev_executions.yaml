@@ -56,7 +56,7 @@ spec:
                 description: States if the pipeline is completed.
                 type: boolean
               completedTasks:
-                description: Tasks which have already completed.
+                description: Tasks which have already suceeded.
                 items:
                   type: string
                 type: array

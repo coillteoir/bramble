@@ -107,11 +107,14 @@ func initExecution(
 						Name:  "cloner",
 						Image: "alpine/git",
 						Command: []string{
-							"git",
-							"clone",
-							execution.Spec.Repo,
-							"--branch=" + execution.Spec.Branch,
-							execution.ObjectMeta.Name,
+							"sh",
+							"-c",
+							fmt.Sprintf("rm -rf %v && git clone %v --branch=%v %v",
+								execution.ObjectMeta.Name,
+								execution.Spec.Repo,
+								execution.Spec.Branch,
+								execution.ObjectMeta.Name,
+							),
 						},
 						VolumeMounts: []corev1.VolumeMount{
 							{

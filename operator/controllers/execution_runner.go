@@ -88,6 +88,9 @@ func executeUsingDfs(
 			case corev1.PodFailed:
 				logger.Info(fmt.Sprintf("%v %v", baseStr, pod.Status.Phase))
 				return nil, fmt.Errorf("pod: %v failed", pod.ObjectMeta.Name)
+			default:
+				logger.Info(fmt.Sprintf("%v %v Pod created but Phase undefined", baseStr, pod.Status.Phase))
+				return nil, nil
 			}
 		}
 	}
