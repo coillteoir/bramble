@@ -8,5 +8,4 @@ spec:
       spec:
         image: ubuntu
         command:
-        - sleep
-        - "10"
+        - pwd
