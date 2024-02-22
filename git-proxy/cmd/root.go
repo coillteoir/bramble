@@ -8,30 +8,44 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 )
 
-func hello(w http.ResponseWriter, req *http.Request) {
-			fmt.Fprintf(w, fmt.Sprintf("%v", req))
-		}
-
+const (
+	defaultPort = 9999
+)
 
 var rootCmd = &cobra.Command{
 	Use:   "bramble-git-proxy",
 	Short: "A proxy between git providers and the Bramble CI/CD system",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		logger, err := zap.NewDevelopment()
+		if err != nil {
+			return err
+		}
 
-        port, err := cmd.Flags().GetInt("port")
-        if err != nil {
-            return nil
-        }
+		sugar := logger.Sugar()
 
+		port, err := cmd.Flags().GetInt("port")
+		if err != nil {
+			return err
+		}
 
-		http.HandleFunc("/hello", hello)
+		http.HandleFunc("/webhook", func(writer http.ResponseWriter, request *http.Request) {
+			sugar.Infof("%v", request.Body)
+		})
 
-        fmt.Printf("GIT PROXY RUNNING ON PORT: %v", port)
-		err = http.ListenAndServe(fmt.Sprintf(":%v", port), nil)
+		sugar.Infof("GIT PROXY RUNNING ON PORT: %v", port)
+
+		server := http.Server{
+			Addr:              fmt.Sprintf(":%v", port),
+			ReadHeaderTimeout: 3 * time.Second,
+		}
+
+		err = server.ListenAndServe()
 		if err != nil {
 			return err
 		}
@@ -49,6 +63,6 @@ func Execute() {
 
 func init() {
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle.")
-    rootCmd.Flags().BoolP("dry-run", "d", false, "Just generate execution resources without running them.")
-    rootCmd.Flags().IntP("port", "p", 9999, "Port to listen to");
+	rootCmd.Flags().BoolP("dry-run", "d", false, "Just generate execution resources without running them.")
+	rootCmd.Flags().IntP("port", "p", defaultPort, "Port to listen to")
 }
