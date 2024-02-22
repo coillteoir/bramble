@@ -74,13 +74,12 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 	if isExecutionMarkedToBeDeleted {
 		if controllerutil.ContainsFinalizer(execution, executionFinalizer) {
 			err = teardownExecution(ctx, reconciler, execution)
-
 			if err != nil {
 				return ctrl.Result{}, err
+			} else {
+				return ctrl.Result{}, nil
 			}
 		}
-
-		return ctrl.Result{}, nil
 	}
 
 	if execution.Status.Completed {

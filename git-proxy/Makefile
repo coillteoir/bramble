@@ -1,6 +1,6 @@
 OWNER?=davidlynchsd
 
-build: tidy
+build:
 	go build -o bin/bramble-git-proxy .
 
 run:

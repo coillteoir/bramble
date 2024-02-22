@@ -38,11 +38,11 @@ type ExecutionStatus struct {
 	RepoCloned bool `json:"repoCloned,omitempty" default:"false"`
 
 	// Describes which tasks are currently running.
-	Executing []string `json:"executing,omitempty"`
+	Running []string `json:"executing,omitempty"`
+	// Tasks which have already suceeded.
+	Suceeded []string `json:"completedTasks,omitempty"`
 	// States if the pipeline is completed.
 	Completed bool `json:"completed" default:"false"`
-	// Tasks which have already completed.
-	CompletedTasks []string `json:"completedTasks,omitempty"`
 	// States if the pipeline has failed at any point.
 	Error bool `json:"error" default:"false"`
 }

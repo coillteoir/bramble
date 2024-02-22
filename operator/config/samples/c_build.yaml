@@ -8,9 +8,7 @@ spec:
       spec:
         image: gcc
         command:
-          - sh
-          - -c
-          - "pwd && ls && gcc -o ctml $(pwd)/src/main.c"
+          ["gcc","-Wall","-Wextra","-Werror","-o","/src/ctml","/src/src/main.c"]
         dependencies:
           - check
           - ubuntu

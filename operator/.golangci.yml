@@ -89,7 +89,6 @@ linters:
     - funlen
     - gci
     - gocheckcompilerdirectives
-      #- gochecknoinits
     - goconst
     - gocritic
     - gocyclo
@@ -107,33 +106,19 @@ linters:
     - nestif
     - nilerr
     - nilnil
-    - nlreturn
     - noctx
     - nolintlint
     - revive
     - staticcheck
     - stylecheck
-    - tagalign
     - typecheck
     - unconvert
     - unparam
     - unused
-    - whitespace
-
-  # - asciicheck
-  # - scopelint
-  # - gochecknoglobals
     - gocognit
     - gocritic 
-    - godot
-  # - godox
-  # - goerr113
-  # - interfacer
-  # - maligned
     - nestif
     - prealloc
-  # - testpackage
-    - wsl
 
 issues:
   # Excluding configuration per-path, per-linter, per-text and per-source

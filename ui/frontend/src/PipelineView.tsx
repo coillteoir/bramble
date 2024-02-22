@@ -1,59 +1,60 @@
+import React, { useEffect } from "react";
+
+import ReactFlow, { useNodesState, useEdgesState, Node, Edge } from "reactflow";
+import Dagre from "@dagrejs/dagre";
+
 import { Pipeline, PLtask } from "./bramble_types.ts";
-import { Component, For } from "solid-js";
 
-const PipelineView: Component<{ pipeline: Pipeline }> = (props: {
-    pipeline: Pipeline;
-}) => {
+import {
+    getLayoutedElements,
+    generateNodes,
+    generateEdges,
+} from "./PipelineGraph.tsx";
+
+// https://codesandbox.io/p/sandbox/romantic-bas-z2v5wm?file=%2FApp.js%3A63%2C51&utm_medium=sandpack
+const PipelineView = (props: { pipeline: Pipeline }): React.ReactNode => {
     const pl: Pipeline = props.pipeline;
-    console.log(pl);
-    return (
-        <div class="bg-green-800">
-            <h2 class="">Pipeline: {pl.metadata.name}</h2>
-            <h2 class=""> Tasks </h2>
-            <ul class="">
-                {pl.spec.tasks && (
-                    <PLTaskView task={pl.spec?.tasks[0]} pipeline={pl} />
-                )}
-            </ul>
-        </div>
+    const [nodes, setNodes, onNodesChange] = useNodesState(
+        pl.spec.tasks ? generateNodes(pl.spec.tasks) : ([] as Node[])
     );
-};
+    const [edges, setEdges, onEdgesChange] = useEdgesState(
+        pl.spec.tasks ? generateEdges(pl.spec.tasks) : ([] as Edge[])
+    );
 
-const PLTaskView: Component<{ task: PLtask; pipeline: Pipeline }> = (props: {
-    task: PLtask;
-    pipeline: Pipeline;
-}) => {
-    const task: PLtask = props.task;
-    const pipeline: Pipeline = props.pipeline;
+    useEffect(() => {
+        const layouted = getLayoutedElements(nodes, edges);
+
+        setNodes([...layouted.nodes]);
+        setEdges([...layouted.edges]);
+    });
+
     return (
-        <div class="">
-            {!task.spec.dependencies && <h3 class="">{task.name}</h3>}
-            {task.spec.dependencies && (
-                <details open class="">
-                    <summary>{task.name}</summary>
-                    <ul>
-                        <For each={task.spec.dependencies}>
-                            {(dep: string) => {
-                                const task0 = pipeline.spec.tasks?.filter(
-                                    (task) => task.name == dep
-                                )[0];
-
-                                return (
-                                    task0 && (
-                                        <li class="">
-                                            <PLTaskView
-                                                task={task0}
-                                                pipeline={pipeline}
-                                            />
-                                        </li>
-                                    )
-                                );
-                            }}
-                        </For>
-                    </ul>
-                </details>
-            )}
-        </div>
+        <>
+            <h2 className="">Pipeline: {pl.metadata.name}</h2>
+            <div
+                className=""
+                style={{
+                    width: "100vw",
+                    height: "100vh",
+                    border: "black 3px",
+                }}
+            >
+                <ReactFlow
+                    nodes={nodes}
+                    edges={edges}
+                    onNodesChange={onNodesChange}
+                    onEdgesChange={onEdgesChange}
+                    fitView
+                    defaultEdgeOptions={{
+                        animated: true,
+                        style: {
+                            "animation-direction": "reverse",
+                            stroke: "green",
+                        } as any,
+                    }}
+                />
+            </div>
+        </>
     );
 };
 
