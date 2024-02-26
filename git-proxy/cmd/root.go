@@ -36,7 +36,7 @@ var rootCmd = &cobra.Command{
 
 		http.HandleFunc("/webhook", func(writer http.ResponseWriter, request *http.Request) {
 			sugar.Infof("%v", request.Body)
-			writer.Write("Hello from webhook!")
+			writer.Write([]byte("Hello from webhook!"))
 		})
 
 		sugar.Infof("GIT PROXY RUNNING ON PORT: %v", port)
