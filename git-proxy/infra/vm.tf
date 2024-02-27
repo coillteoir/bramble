@@ -23,16 +23,17 @@ resource "google_compute_instance" "vm-1" {
   machine_type = "e2-micro"
   name         = "vm-1"
 
-  metadata_startup_script = "${file("./init_git_proxy.sh")}"
+  metadata_startup_script = file("./init_git_proxy.sh")
 
   network_interface {
+    network = "tf-network"
+
     access_config {
       network_tier = "PREMIUM"
     }
 
     queue_count = 0
     stack_type  = "IPV4_ONLY"
-    subnetwork  = "projects/terraform-playground-409722/regions/us-central1/subnetworks/default"
   }
 
   scheduling {
@@ -40,11 +41,6 @@ resource "google_compute_instance" "vm-1" {
     on_host_maintenance = "MIGRATE"
     preemptible         = false
     provisioning_model  = "STANDARD"
-  }
-
-  service_account {
-    email  = ""
-    scopes = ["https://www.googleapis.com/auth/devstorage.read_only", "https://www.googleapis.com/auth/logging.write", "https://www.googleapis.com/auth/monitoring.write", "https://www.googleapis.com/auth/service.management.readonly", "https://www.googleapis.com/auth/servicecontrol", "https://www.googleapis.com/auth/trace.append"]
   }
 
   shielded_instance_config {
@@ -56,4 +52,3 @@ resource "google_compute_instance" "vm-1" {
   tags = ["http-server", "https-server"]
   zone = "us-central1-a"
 }
-
