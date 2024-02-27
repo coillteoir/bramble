@@ -52,14 +52,14 @@ var rootCmd = &cobra.Command{
 
 			switch event := event.(type) {
 			case *github.PushEvent:
-				sugar.Infof("Pushed!!\n%v", request)
+				sugar.Infof("Pushed!!\n%v", event.Ref)
 			default:
-				sugar.Infof("DifferentEvent: %v", event)
+				sugar.Infof("DifferentEvent")
 			}
 
 			_, err = writer.Write([]byte("Hello from webhook!\n"))
 			if err != nil {
-				sugar.Errorf("Writer failed: %f", request)
+				sugar.Errorf("Writer failed: %v", request)
 				return
 			}
 		})
