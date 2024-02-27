@@ -10,6 +10,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/google/go-github/v59/github"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -35,8 +36,32 @@ var rootCmd = &cobra.Command{
 		}
 
 		http.HandleFunc("/webhook", func(writer http.ResponseWriter, request *http.Request) {
+			payload, err := github.ValidatePayload(request, nil)
+			if err != nil {
+				sugar.Errorf("Invalid payload: %v", request)
+				return
+			}
+
+			event, err := github.ParseWebHook(github.WebHookType(request), payload)
+			if err != nil {
+				sugar.Errorf("Cannot parse webhook: %v", request)
+				return
+			}
+
 			sugar.Infof("%v", request.Body)
-			writer.Write([]byte("Hello from webhook!\n"))
+
+			switch event := event.(type) {
+			case *github.PushEvent:
+				sugar.Infof("Pushed!!\n%v", request)
+			default:
+				sugar.Infof("DifferentEvent: %v", event)
+			}
+
+			_, err = writer.Write([]byte("Hello from webhook!\n"))
+			if err != nil {
+				sugar.Errorf("Writer failed: %f", request)
+				return
+			}
 		})
 
 		sugar.Infof("GIT PROXY RUNNING ON PORT: %v", port)
