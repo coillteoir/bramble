@@ -21,7 +21,7 @@ const (
 
 var rootCmd = &cobra.Command{
 	Use:   "bramble-git-proxy",
-	Short: "A proxy between git providers and the Bramble CI/CD system",
+	Short: "A proxy between git providers and the Bramble CI/CD framework",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		logger, err := zap.NewDevelopment()
 		if err != nil {
