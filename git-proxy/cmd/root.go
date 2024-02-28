@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/google/go-github/v59/github"
@@ -51,9 +52,17 @@ var rootCmd = &cobra.Command{
 			switch event := event.(type) {
 			case *github.PushEvent:
 				sugar.Infof("Pushed!! %v", *event.Ref)
-				_, err = writer.Write([]byte("Thanks for the push!\n"))
-				if err != nil {
-					sugar.Errorf("Writer failed: %v", request)
+				branchname, found := strings.CutPrefix(*event.Ref, "refs/heads/")
+				if found {
+					_, err = fmt.Fprintf(writer, "Push event created for branch: %v\n", branchname)
+					if err != nil {
+						sugar.Errorf("Writer failed: %v", request)
+					}
+				} else {
+					_, err = writer.Write([]byte("Could not parse push event\n"))
+					if err != nil {
+						sugar.Errorf("Writer failed: %v", request)
+					}
 				}
 				return
 
