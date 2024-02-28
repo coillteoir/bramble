@@ -53,6 +53,12 @@ var rootCmd = &cobra.Command{
 			switch event := event.(type) {
 			case *github.PushEvent:
 				sugar.Infof("Pushed!!\n%v", *event.Ref)
+				_, err = writer.Write([]byte("Thanks for the push!\n"))
+				if err != nil {
+					sugar.Errorf("Writer failed: %v", request)
+				}
+				return
+
 			default:
 				sugar.Infof("DifferentEvent")
 			}
