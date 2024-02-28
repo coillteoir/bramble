@@ -90,5 +90,5 @@ func Execute() {
 func init() {
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle.")
 	rootCmd.Flags().BoolP("dry-run", "d", false, "Just generate execution resources without running them.")
-	rootCmd.Flags().IntP("port", "p", defaultPort, "Port to listen to")
+	rootCmd.Flags().IntP("port", "p", defaultPort, "Port for http server to listen to.")
 }
