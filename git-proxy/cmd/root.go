@@ -52,7 +52,7 @@ var rootCmd = &cobra.Command{
 
 			switch event := event.(type) {
 			case *github.PushEvent:
-				sugar.Infof("Pushed!!\n%v", event.Ref)
+				sugar.Infof("Pushed!!\n%v", *event.Ref)
 			default:
 				sugar.Infof("DifferentEvent")
 			}
