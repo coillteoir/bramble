@@ -63,7 +63,7 @@ linters-settings:
   errorlint:
     asserts: false
   lll:
-    line-length: 140
+    line-length: 100
   misspell:
     locale: IE
   nolintlint:

@@ -24,10 +24,10 @@ const (
 )
 
 type proxyConfig struct {
-    Provider string
-    Owner    string
-    Repo     string
-    Pairings map[string]string
+	Provider string
+	Owner    string
+	Repo     string
+	Pairings map[string]string
 }
 
 var rootCmd = &cobra.Command{
@@ -56,15 +56,12 @@ var rootCmd = &cobra.Command{
 			return err
 		}
 
-        config := []proxyConfig{}
+		config := []proxyConfig{}
 
 		err = yaml.Unmarshal(configData, &config)
 		if err != nil {
 			return err
 		}
-
-		fmt.Println(string(configData))
-		fmt.Println(config)
 
 		http.HandleFunc("/webhook", func(writer http.ResponseWriter, request *http.Request) {
 			payload, err := github.ValidatePayload(request, nil)
@@ -88,6 +85,27 @@ var rootCmd = &cobra.Command{
 					if err != nil {
 						sugar.Errorf("Writer failed: %v", request)
 					}
+
+					for _, repo := range config {
+						if repo.Provider != "github" {
+							continue
+						}
+						if repo.Owner == *event.Repo.Owner.Name && repo.Repo == *event.Repo.Name {
+							if pipeline, exists := repo.Pairings[branchname]; exists {
+								_, err = fmt.Fprintf(writer, "Executiing pipeline %v on branch %v", pipeline, branchname)
+								if err != nil {
+									sugar.Errorf("Writer failed: %v", request)
+								}
+							} else {
+								_, err = fmt.Fprintf(writer, "No pipelines are configured for branch %v", branchname)
+								if err != nil {
+									sugar.Errorf("Writer failed: %v", request)
+								}
+
+							}
+						}
+					}
+
 				} else {
 					_, err = writer.Write([]byte("Could not parse push event\n"))
 					if err != nil {
