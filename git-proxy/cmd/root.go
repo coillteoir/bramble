@@ -24,15 +24,10 @@ const (
 )
 
 type proxyConfig struct {
-	GitRepo struct {
-		Provider string
-		Owner    string
-		Repo     string
-	}
-	BranchRules []struct {
-		Pattern  string
-		Pipeline string
-	}
+    Provider string
+    Owner    string
+    Repo     string
+    Pairings map[string]string
 }
 
 var rootCmd = &cobra.Command{
@@ -61,7 +56,8 @@ var rootCmd = &cobra.Command{
 			return err
 		}
 
-		config := []proxyConfig{}
+        config := []proxyConfig{}
+
 		err = yaml.Unmarshal(configData, &config)
 		if err != nil {
 			return err

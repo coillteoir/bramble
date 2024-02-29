@@ -1,9 +1,6 @@
-- git-repo:
-    provider: github
-    owner: coillteoir
-    repo: bramble
-  branch-rules:
-    - branch-pattern: ^master$|^main$
-      pipeline: bramble-release
-    - branch-pattern: develop
-      pipeline: bramble-dev
+- provider: github
+  owner: coillteoir
+  repo: bramble
+  pairings:
+    bramble-release: master
+    bramble-dev: develop
