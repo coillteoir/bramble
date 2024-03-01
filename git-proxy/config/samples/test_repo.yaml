@@ -4,4 +4,4 @@
   pairings:
     bramble-release: master
     bramble-dev: develop
-    bramble-dev: git-proxy
+    bramble-git-proxy: git-proxy
