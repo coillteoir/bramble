@@ -93,7 +93,7 @@ var rootCmd = &cobra.Command{
 						if repo.Owner == *event.Repo.Owner.Name && repo.Repo == *event.Repo.Name {
 							sugar.Infof("Push to branch: %v Pipeline: %v", branchname, repo.Pairings[branchname])
 							if pipeline, exists := repo.Pairings[branchname]; exists {
-								_, err = fmt.Fprintf(writer, "Executiing pipeline %v on branch %v", pipeline, branchname)
+								_, err = fmt.Fprintf(writer, "Executing pipeline %v on branch %v", pipeline, branchname)
 								if err != nil {
 									sugar.Errorf("Writer failed: %v", request)
 								}
