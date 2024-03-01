@@ -1,4 +1,4 @@
-resource "google_compute_instance" "vm-1" {
+resource "google_compute_instance" "git-proxy-vm" {
   boot_disk {
     auto_delete = true
     device_name = "instance-20240223-130250"
@@ -26,7 +26,7 @@ resource "google_compute_instance" "vm-1" {
   metadata_startup_script = file("./init_git_proxy.sh")
 
   network_interface {
-    network = "tf-network"
+    network = google_compute_network.git-proxy-network.id
 
     access_config {
       network_tier = "PREMIUM"
