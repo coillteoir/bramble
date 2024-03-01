@@ -2,6 +2,6 @@
   owner: coillteoir
   repo: bramble
   pairings:
-    bramble-release: master
-    bramble-dev: develop
-    bramble-git-proxy: git-proxy
+    master: bramble-release
+    develop: bramble-dev
+    git-proxy: bramble-dev
