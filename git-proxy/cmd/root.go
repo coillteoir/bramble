@@ -64,65 +64,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		http.HandleFunc("/webhook", func(writer http.ResponseWriter, request *http.Request) {
-			payload, err := github.ValidatePayload(request, nil)
-			if err != nil {
-				sugar.Errorf("Invalid payload: %v", request)
-				return
-			}
-
-			event, err := github.ParseWebHook(github.WebHookType(request), payload)
-			if err != nil {
-				sugar.Errorf("Cannot parse webhook: %v", request)
-				return
-			}
-
-			switch event := event.(type) {
-			case *github.PushEvent:
-				sugar.Infof("Pushed!! %v", *event.Ref)
-				branchname, found := strings.CutPrefix(*event.Ref, headPrefix)
-				if found {
-					_, err = fmt.Fprintf(writer, "Push event created for branch: %v\n", branchname)
-					if err != nil {
-						sugar.Errorf("Writer failed: %v", request)
-					}
-
-					for _, repo := range config {
-						if repo.Provider != "github" {
-							continue
-						}
-						if repo.Owner == *event.Repo.Owner.Name && repo.Repo == *event.Repo.Name {
-							sugar.Infof("Push to branch: %v Pipeline: %v", branchname, repo.Pairings[branchname])
-							if pipeline, exists := repo.Pairings[branchname]; exists {
-								_, err = fmt.Fprintf(writer, "Executing pipeline %v on branch %v", pipeline, branchname)
-								if err != nil {
-									sugar.Errorf("Writer failed: %v", request)
-								}
-							} else {
-								_, err = fmt.Fprintf(writer, "No pipelines are configured for branch %v", branchname)
-								if err != nil {
-									sugar.Errorf("Writer failed: %v", request)
-								}
-
-							}
-						}
-					}
-				} else {
-					_, err = writer.Write([]byte("Could not parse push event\n"))
-					if err != nil {
-						sugar.Errorf("Writer failed: %v", request)
-					}
-				}
-				return
-
-			default:
-				sugar.Infof("DifferentEvent")
-			}
-
-			_, err = writer.Write([]byte("Hello from webhook!\n"))
-			if err != nil {
-				sugar.Errorf("Writer failed: %v", request)
-				return
-			}
+			processPushEvent(writer, request, config, sugar)
 		})
 
 		sugar.Infof("GIT PROXY RUNNING ON PORT: %v", port)
@@ -139,6 +81,69 @@ var rootCmd = &cobra.Command{
 
 		return nil
 	},
+}
+
+func processPushEvent(writer http.ResponseWriter, request *http.Request, config []proxyConfig, sugar *zap.SugaredLogger) error {
+	payload, err := github.ValidatePayload(request, nil)
+	if err != nil {
+		sugar.Errorf("Invalid payload: %v", request)
+		return err
+	}
+
+	event, err := github.ParseWebHook(github.WebHookType(request), payload)
+	if err != nil {
+		sugar.Errorf("Cannot parse webhook: %v", request)
+		return err
+	}
+
+	switch event := event.(type) {
+	case *github.PushEvent:
+		sugar.Infof("Pushed!! %v", *event.Ref)
+		branchName, found := strings.CutPrefix(*event.Ref, headPrefix)
+		if !found {
+			_, err = writer.Write([]byte("Could not parse branch from push event\n"))
+			if err != nil {
+				sugar.Errorf("Writer failed: %v", request)
+			}
+			return err
+		}
+		_, err = fmt.Fprintf(writer, "Push event created for branch: %v\n", branchName)
+		if err != nil {
+			sugar.Errorf("Writer failed: %v", request)
+			return err
+		}
+
+		for _, repo := range config {
+			nameMatch := (repo.Owner == *event.Repo.Owner.Name && repo.Repo == *event.Repo.Name)
+			if repo.Provider != "github" || !nameMatch {
+				continue
+			}
+			sugar.Infof("Push to branch: %v Pipeline: %v", branchName, repo.Pairings[branchName])
+			if _, exists := repo.Pairings[branchName]; !exists {
+				_, err = fmt.Fprintf(writer, "No pipelines are configured for branch %v", branchName)
+				if err != nil {
+					sugar.Errorf("Writer failed: %v", request)
+					return err
+				}
+
+			}
+			_, err = fmt.Fprintf(writer, "Executing pipeline %v on branch %v", repo.Pairings[branchName], branchName)
+			if err != nil {
+				sugar.Errorf("Writer failed: %v", request)
+				return err
+			}
+		}
+		return err
+	default:
+		sugar.Infof("DifferentEvent")
+	}
+
+	_, err = writer.Write([]byte("Hello from webhook!\n"))
+	if err != nil {
+		sugar.Errorf("Writer failed: %v", request)
+		return err
+	}
+	return nil
 }
 
 func Execute() {
