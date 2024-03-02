@@ -5,10 +5,10 @@ Copyright 2024 David Lynch davite3@protonmail.com
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
-    "errors"
 	"strings"
 	"time"
 
@@ -65,13 +65,17 @@ var rootCmd = &cobra.Command{
 		}
 
 		http.HandleFunc("/webhook", func(writer http.ResponseWriter, request *http.Request) {
-			_,err = processPushEvent(request, config, sugar)
-            if err != nil {
-               _, err = fmt.Fprintf(writer, "ERROR: %v", err)
-               if err != nil {
-                    sugar.Error("Writer failed")
-               }
-            }
+			response, err := processPushEvent(request, config, sugar)
+			if err != nil {
+				_, err = fmt.Fprintf(writer, "ERROR: %v", err)
+				if err != nil {
+					sugar.Error("Writer failed")
+				}
+			}
+			_, err = writer.Write([]byte(response))
+			if err != nil {
+				sugar.Error("Writer failed")
+			}
 		})
 
 		sugar.Infof("GIT PROXY RUNNING ON PORT: %v", port)
@@ -123,9 +127,9 @@ func processPushEvent(request *http.Request, config []proxyConfig, sugar *zap.Su
 		}
 	default:
 		sugar.Infof("DifferentEvent")
-	    return "Hello from webhook!\n", nil
+		return "Hello from webhook!\n", nil
 	}
-    return "", nil
+	return "", nil
 }
 
 func Execute() {
