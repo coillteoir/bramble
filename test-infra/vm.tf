@@ -26,7 +26,7 @@ resource "google_compute_instance" "git-proxy-vm" {
   metadata_startup_script = file("./init_git_proxy.sh")
 
   network_interface {
-    network = google_compute_network.git-proxy-network.id
+    network = google_compute_network.bramble-cluster-network.id
 
     access_config {
       network_tier = "PREMIUM"
@@ -37,10 +37,10 @@ resource "google_compute_instance" "git-proxy-vm" {
   }
 
   scheduling {
-    automatic_restart   = true
-    on_host_maintenance = "MIGRATE"
-    preemptible         = false
-    provisioning_model  = "STANDARD"
+    automatic_restart   = false
+    on_host_maintenance = "TERMINATE"
+    preemptible         = true
+    provisioning_model  = "SPOT"
   }
 
   shielded_instance_config {

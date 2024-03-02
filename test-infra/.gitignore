@@ -1,0 +1,7 @@
+*.json
+*.tfstate
+*.tfstate.backup
+main.tf
+.terraform/
+.terraform.lock.hcl
+url.txt
