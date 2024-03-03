@@ -1,4 +1,4 @@
-*.json
+creds.json
 *.tfstate*
 main.tf
 .terraform/
