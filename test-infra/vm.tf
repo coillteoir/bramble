@@ -26,7 +26,7 @@ resource "google_compute_instance" "git-proxy-vm" {
   metadata_startup_script = file("./init_git_proxy.sh")
 
   network_interface {
-    network = google_compute_network.bramble-cluster-network.id
+    network = google_compute_network.bramble.id
 
     access_config {
       network_tier = "PREMIUM"

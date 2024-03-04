@@ -1,16 +1,16 @@
-resource "google_container_cluster" "bramble_test_cluster" {
+resource "google_container_cluster" "bramble_test" {
   name                     = "bramble-test-cluster"
   location                 = "us-central1-a"
   remove_default_node_pool = true
   initial_node_count       = 1
-  network                  = google_compute_network.bramble-cluster-network.id
+  network                  = google_compute_network.bramble.id
 }
 
-resource "google_container_node_pool" "primary_preemptible_nodes" {
+resource "google_container_node_pool" "primary-nodes" {
   name       = "bramble-node-pool"
   location   = "us-central1-a"
-  cluster    = google_container_cluster.bramble_test_cluster.id
-  node_count = 1
+  cluster    = google_container_cluster.bramble_test.id
+  node_count = 2
 
   node_config {
     preemptible  = true

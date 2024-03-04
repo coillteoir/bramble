@@ -1,11 +1,11 @@
-resource "google_compute_network" "bramble-cluster-network" {
+resource "google_compute_network" "bramble" {
   name                    = "bramble-cluster-network"
   auto_create_subnetworks = true
 }
 
 resource "google_compute_firewall" "allow-http" {
   name    = "allow-http"
-  network = google_compute_network.bramble-cluster-network.id
+  network = google_compute_network.bramble.id
 
   allow {
     protocol = "tcp"
