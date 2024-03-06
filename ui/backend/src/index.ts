@@ -18,7 +18,25 @@ app.get("/pipelines/:ns", async (req: Request, res: Response) => {
     res.json(pipelines);
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "internal server error (womp womp)" });
+    res
+      .status(500)
+      .json({
+        error: "Cannot fetch pipelines from namespace: " + req.params.ns,
+      });
+  }
+});
+
+app.get("/pods/:ns", async (req: Request, res: Response) => {
+  try {
+    console.log("Queriying pipelines in:" + req.params.ns);
+    const pods = await getPods(req.params.ns);
+    console.log(pods);
+    res.json(pods);
+  } catch (error) {
+    console.log(error);
+    res
+      .status(500)
+      .json({ error: "Cannot fetch pods from namespace: " + req.params.ns });
   }
 });
 app.get("/pods/:ns", async (req: Request, res: Response) => {
