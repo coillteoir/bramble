@@ -1,5 +1,5 @@
 resource "google_container_cluster" "bramble_test" {
-  name                     = "bramble-test-cluster"
+  name                     = "bramble"
   location                 = "us-central1-a"
   remove_default_node_pool = true
   initial_node_count       = 1
@@ -7,7 +7,7 @@ resource "google_container_cluster" "bramble_test" {
 }
 
 resource "google_container_node_pool" "primary-nodes" {
-  name       = "bramble-node-pool"
+  name       = "bramble"
   location   = "us-central1-a"
   cluster    = google_container_cluster.bramble_test.id
   node_count = 2
