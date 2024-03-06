@@ -13,8 +13,18 @@ if (process.env.IN_CLUSTER === "1") {
 }
 
 const k8sCRDApi = kc.makeApiClient(k8s.CustomObjectsApi);
+const k8sCoreApi = kc.makeApiClient(k8s.CoreV1Api);
 
-export const getPL = async (ns: string): Promise<Pipeline[] | Error> => {
+export const getPods = async (namespace: string) => {
+  try {
+    const response = await k8sCoreApi.listNamespacedPod(namespace);
+    return response?.body?.items;
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+export const getPipelines = async (ns: string): Promise<Pipeline[] | Error> => {
   try {
     const response = await k8sCRDApi.listNamespacedCustomObject(
       "pipelines.bramble.dev",

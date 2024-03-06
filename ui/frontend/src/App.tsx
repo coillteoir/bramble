@@ -56,8 +56,9 @@ const App = (): React.ReactNode => {
         <>
             <header className="bg-green-400">
                 <h1 className="text-3xl font-bold">Bramble</h1>
-                <ul className="">
+                <ul className="grid">
                     <li className="">Pipelines</li>
+                    <li className="">Executions</li>
                 </ul>
             </header>
             <div className="bg-green-200 w-screen h-screen">
@@ -85,7 +86,7 @@ const App = (): React.ReactNode => {
                     >
                         Get pipelines
                     </button>
-                    <div className="divide-y divide-slate-400">
+                    <div className="divide-y divide-slate-400 bg-green">
                         {pipelines.length !== 0 && (
                             <h1>Pipelines in the {namespace} namespace</h1>
                         )}

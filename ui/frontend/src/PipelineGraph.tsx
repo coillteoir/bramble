@@ -1,6 +1,6 @@
 import { PLtask } from "./bramble_types.ts";
 
-import ReactFlow, { Node, Edge } from "reactflow";
+import { Node, Edge } from "reactflow";
 import Dagre from "@dagrejs/dagre";
 
 // https://codesandbox.io/p/sandbox/romantic-bas-z2v5wm?file=%2FApp.js%3A63%2C51&utm_medium=sandpack
@@ -26,7 +26,7 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
 };
 
 export const generateNodes = (tasks: PLtask[]): Node[] => {
-    return tasks.map((task: PLtask, i: number): Node => {
+    return tasks.map((task: PLtask): Node => {
         return {
             id: task.name,
             width: 120,
@@ -35,9 +35,7 @@ export const generateNodes = (tasks: PLtask[]): Node[] => {
             data: {
                 label: (
                     <div>
-                        <p>Name: {task.name}</p>
-                        <p>Image: {task.spec.image}</p>
-                        <p>Command: {task.spec.command.join(" ")}</p>
+                        <p>{task.name}</p>
                     </div>
                 ),
             },
