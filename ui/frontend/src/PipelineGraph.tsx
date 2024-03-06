@@ -29,7 +29,9 @@ export const generateNodes = (tasks: PLtask[]): Node[] => {
     return tasks.map((task: PLtask, i: number): Node => {
         return {
             id: task.name,
-            position: { x: 0, y: i * 200 },
+            width: 120,
+            height: 50,
+            position: { x: 0, y: 0 },
             data: {
                 label: (
                     <div>
@@ -52,7 +54,6 @@ export const generateEdges = (tasks: PLtask[]): Edge[] => {
                           id: task.name + i.toString(),
                           target: dep,
                           source: task.name,
-                          type: "output",
                       };
                   })
                 : ([] as Edge[]);
