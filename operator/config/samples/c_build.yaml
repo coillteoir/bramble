@@ -8,7 +8,7 @@ spec:
       spec:
         image: gcc
         command:
-          ["gcc","-Wall","-Wextra","-Werror","-o","/src/ctml","/src/src/main.c"]
+          ["gcc","-Wall","-Wextra","-Werror","-o","ctml","src/main.c"]
         dependencies:
           - check
           - ubuntu

@@ -47,7 +47,6 @@ type ExecutionReconciler struct {
 
 const (
 	executionFinalizer = "executions.pipelines.bramble.dev/finalizer"
-	sourceRoot         = "/src/"
 	pvSuffix           = "-pv"
 )
 
@@ -105,8 +104,6 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	matrix := generateAssociationMatrix(pipeline)
 
-	var pv *corev1.PersistentVolume
-
 	var pvc *corev1.PersistentVolumeClaim
 
 	// Check if volume exists
@@ -131,7 +128,7 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	if !execution.Status.VolumeProvisioned {
-		err = initExecution(ctx, reconciler, execution, pv, pvc)
+		err = initExecution(ctx, reconciler, execution, pvc)
 
 		if err != nil {
 			return ctrl.Result{}, err
