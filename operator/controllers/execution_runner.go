@@ -47,7 +47,6 @@ func validateTask(
 	pipeline *pipelinesv1alpha1.Pipeline,
 	execution *pipelinesv1alpha1.Execution,
 	podList *corev1.PodList,
-	pvc *corev1.PersistentVolumeClaim,
 ) (bool, error) {
 	logger := log.Log.WithName(fmt.Sprintf("Execution: %v", execution.ObjectMeta.Name))
 
@@ -82,6 +81,7 @@ func validateTask(
 	}
 
 	logger.Info(fmt.Sprintf("Checking dependencies of task: %v", task.Name))
+
 	// Check dependencies have completed before running task.
 	count := len(task.Spec.Dependencies)
 
@@ -103,6 +103,7 @@ func validateTask(
 			),
 		)
 	}
+
 	return count == 0, nil
 }
 
@@ -130,12 +131,10 @@ func executeUsingDfs(
 		pipeline,
 		execution,
 		podList,
-		pvc,
 	)
 	if err != nil {
 		return nil, err
 	}
-	logger.Info(fmt.Sprintf("%v", toRun))
 	// BUG: When running controller-manger in cluster, pods are created multiple times and executions do not work
 	if toRun {
 		logger.Info(fmt.Sprintf("Executing task: %v", task.Name))
