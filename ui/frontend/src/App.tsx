@@ -1,5 +1,5 @@
 import { PipelineView } from "./PipelineView.tsx";
-import { Pipeline } from "./bramble_types";
+import { pipelinesBrambleDev } from "./bramble-types";
 import "reactflow/dist/style.css";
 import React, { useState, useEffect, useRef } from "react";
 import "./index.css";
@@ -7,9 +7,9 @@ import "./index.css";
 const App = (): React.ReactNode => {
     const [namespace, setNamespace] = useState<string>("default");
     const [focusedPipeline, setFocusedPipeline] = useState<number>(0);
-    const [pipelines, setPipelines] = useState<Pipeline[]>(
-        new Array<Pipeline>()
-    );
+    const [pipelines, setPipelines] = useState<
+        pipelinesBrambleDev.v1alpha1.Pipeline[]
+    >(new Array<pipelinesBrambleDev.v1alpha1.Pipeline>());
 
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -19,10 +19,13 @@ const App = (): React.ReactNode => {
             await fetch("http://localhost:5555/pipelines/" + namespace)
                 .then((response) => response.json())
                 .then((jsonData) => {
+                    console.log(jsonData)
                     setPipelines(
                         jsonData.map(
-                            (pipeline: Pipeline) =>
-                                new Pipeline(pipeline.metadata, pipeline.spec)
+                            (pipeline: pipelinesBrambleDev.v1alpha1.Pipeline) =>
+                                new pipelinesBrambleDev.v1alpha1.Pipeline(
+                                    pipeline
+                                )
                         )
                     );
                 });
@@ -50,7 +53,7 @@ const App = (): React.ReactNode => {
     useEffect(() => {
         fetchNamespacedPods();
         fetchNamespacedPipelines();
-    }, []);
+    });
 
     return (
         <>
@@ -97,7 +100,10 @@ const App = (): React.ReactNode => {
                             w-fit"
                         >
                             {pipelines.map(
-                                (pipeline: Pipeline, index: number) =>
+                                (
+                                    pipeline: pipelinesBrambleDev.v1alpha1.Pipeline,
+                                    index: number
+                                ) =>
                                     pipeline && (
                                         <li
                                             key={index}
@@ -112,14 +118,14 @@ const App = (): React.ReactNode => {
                                                 );
                                             }}
                                         >
-                                            {pipeline.metadata.name}
+                                            {pipeline.metadata?.name}
                                         </li>
                                     )
                             )}
                         </ul>
                     </div>
                 </>
-                {pipelines.length !== 0 && (
+                {pipelines.length !== 0 && pipelines[focusedPipeline] && (
                     <PipelineView pipeline={pipelines[focusedPipeline]} />
                 )}
             </div>

@@ -12,17 +12,15 @@ app.use(express.static("public"));
 
 app.get("/pipelines/:ns", async (req: Request, res: Response) => {
   try {
-    console.log("Queriying pipelines in:" + req.params.ns);
+    console.log("Querying pipelines in:" + req.params.ns);
     const pipelines = await getPipelines(req.params.ns);
     console.log(pipelines);
     res.json(pipelines);
   } catch (error) {
     console.log(error);
-    res
-      .status(500)
-      .json({
-        error: "Cannot fetch pipelines from namespace: " + req.params.ns,
-      });
+    res.status(500).json({
+      error: "Cannot fetch pipelines from namespace: " + req.params.ns,
+    });
   }
 });
 
