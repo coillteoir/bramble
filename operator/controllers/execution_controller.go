@@ -156,12 +156,6 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 		}
 	}
 
-	if err != nil {
-		logger.Error(err, "Couldn't update execution")
-
-		return ctrl.Result{}, err
-	}
-
 	exePods := &corev1.PodList{}
 
 	podSelector := metav1.LabelSelector{
@@ -194,12 +188,6 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 		}
 	}
 
-	err = reconciler.Status().Update(ctx, execution)
-
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
 	// NOTE This algorithm assumes tasks are in their topological order
 	// Needs to be reworked to handle unsorted matricies
 
@@ -230,10 +218,6 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 			}
 		}
 
-		err = reconciler.Update(ctx, execution)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
 	}
 
 	if !controllerutil.ContainsFinalizer(execution, executionFinalizer) {
@@ -243,6 +227,10 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 		if err != nil {
 			return ctrl.Result{}, err
 		}
+	}
+	err = reconciler.Status().Update(ctx, execution)
+	if err != nil {
+		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{RequeueAfter: time.Duration(1 * time.Second)}, nil
