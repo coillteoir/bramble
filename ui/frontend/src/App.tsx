@@ -22,10 +22,9 @@ const App = (): React.ReactNode => {
                     console.log(jsonData)
                     setPipelines(
                         jsonData.map(
-                            (pipeline: pipelinesBrambleDev.v1alpha1.Pipeline) =>
-                                new pipelinesBrambleDev.v1alpha1.Pipeline(
-                                    pipeline
-                                )
+                            (pipeline: pipelinesBrambleDev.v1alpha1.Pipeline) =>{
+                                return pipeline
+                            }
                         )
                     );
                 });
