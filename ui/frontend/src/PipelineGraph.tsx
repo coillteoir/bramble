@@ -1,5 +1,3 @@
-import { pipelinesBrambleDev } from "./bramble-types";
-
 import { Node, Edge } from "reactflow";
 import Dagre from "@dagrejs/dagre";
 
@@ -34,8 +32,8 @@ export const generateNodes = (
             dependencies?: string[] | undefined;
         };
     }[]
-): Node[] => {
-    return tasks.map(
+): Node[] =>
+    tasks.map(
         (task: {
             name: string;
             spec: {
@@ -59,7 +57,6 @@ export const generateNodes = (
             };
         }
     );
-};
 
 export const generateEdges = (
     tasks: {
@@ -70,8 +67,8 @@ export const generateEdges = (
             dependencies?: string[] | undefined;
         };
     }[]
-): Edge[] => {
-    return tasks
+): Edge[] =>
+    tasks
         .map(
             (task: {
                 name: string;
@@ -95,4 +92,3 @@ export const generateEdges = (
             }
         )
         .flat();
-};
