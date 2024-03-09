@@ -1,6 +1,6 @@
 OWNER?=davidlynchsd
 
-build:
+build: vet
 	go build -o bin/bramble-git-proxy .
 
 run:
@@ -12,8 +12,12 @@ docker-build:
 docker-push:
 	docker push ${OWNER}/bramble-git-proxy
 
-local-k8s-deploy:
+k8s-deploy:
 	kubectl apply -k k8s-manifests
+
+vet:
+	gofumpt -w **/*.go
+	go vet ./...
 
 tidy:
 	gofumpt -w **/*.go

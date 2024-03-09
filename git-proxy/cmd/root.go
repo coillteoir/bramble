@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -16,6 +17,12 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
+	// apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	// apierrors "k8s.io/apimachinery/pkg/api/errors"
+	// meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 const (
@@ -52,17 +59,12 @@ var rootCmd = &cobra.Command{
 			return err
 		}
 
-		configData, err := os.ReadFile(path)
+		config, err := loadConfig(path)
 		if err != nil {
 			return err
 		}
 
-		config := []proxyConfig{}
-
-		err = yaml.Unmarshal(configData, &config)
-		if err != nil {
-			return err
-		}
+		// k8sClient, err := initClient()
 
 		http.HandleFunc("/webhook", func(writer http.ResponseWriter, request *http.Request) {
 			response, err := processPushEvent(request, config, sugar)
@@ -94,7 +96,57 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-func processPushEvent(request *http.Request, config []proxyConfig, sugar *zap.SugaredLogger) (string, error) {
+func initClient() (*clientset.Clientset, error) {
+	if os.Getenv("IN_CLUSTER") == "TRUE" {
+		config, err := rest.InClusterConfig()
+		if err != nil {
+			return nil, err
+		}
+
+		client, err := clientset.NewForConfig(config)
+		if err != nil {
+			return nil, err
+		}
+
+		return client, nil
+	}
+
+	kubeconfig := path.Join(
+		os.Getenv("HOME"), ".kube", "config",
+	)
+
+	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	if err != nil {
+		return nil, err
+	}
+	client, err := clientset.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	return client, nil
+}
+
+func loadConfig(path string) ([]proxyConfig, error) {
+	configData, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	config := []proxyConfig{}
+
+	err = yaml.Unmarshal(configData, &config)
+	if err != nil {
+		return nil, err
+	}
+
+	return config, nil
+}
+
+func processPushEvent(
+	request *http.Request,
+	config []proxyConfig,
+	sugar *zap.SugaredLogger,
+) (string, error) {
 	payload, err := github.ValidatePayload(request, nil)
 	if err != nil {
 		sugar.Errorf("Invalid payload: %v", request)
@@ -112,8 +164,9 @@ func processPushEvent(request *http.Request, config []proxyConfig, sugar *zap.Su
 		sugar.Infof("Pushed!! %v", *event.Ref)
 		branchName, found := strings.CutPrefix(*event.Ref, headPrefix)
 		if !found {
-			return "", errors.New("Could not parse branch name")
+			return "", errors.New("could not parse branch name")
 		}
+
 		for _, repo := range config {
 			nameMatch := (repo.Owner == *event.Repo.Owner.Name && repo.Repo == *event.Repo.Name)
 			if repo.Provider != "github" || !nameMatch {
@@ -123,7 +176,11 @@ func processPushEvent(request *http.Request, config []proxyConfig, sugar *zap.Su
 			if _, exists := repo.Pairings[branchName]; !exists {
 				return fmt.Sprintf("No pipelines are configured for branch %v", branchName), nil
 			}
-			return fmt.Sprintf("Executing pipeline %v on branch %v", repo.Pairings[branchName], branchName), nil
+			return fmt.Sprintf(
+				"Executing pipeline %v on branch %v",
+				repo.Pairings[branchName],
+				branchName,
+			), nil
 		}
 	default:
 		sugar.Infof("DifferentEvent")
@@ -141,7 +198,16 @@ func Execute() {
 
 func init() {
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle.")
-	rootCmd.Flags().BoolP("dry-run", "d", false, "Just generate execution resources without running them.")
-	rootCmd.Flags().IntP("port", "p", defaultPort, "Port for http server to listen to.")
-	rootCmd.Flags().StringP("config", "c", defaultPath, "Path to the main config file")
+	rootCmd.Flags().BoolP(
+		"dry-run", "d", false,
+		"Just generate execution resources without running them.",
+	)
+	rootCmd.Flags().IntP(
+		"port", "p", defaultPort,
+		"Port for http server to listen to.",
+	)
+	rootCmd.Flags().StringP(
+		"config", "c", defaultPath,
+		"Path to the main config file",
+	)
 }
