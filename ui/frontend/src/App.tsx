@@ -57,14 +57,10 @@ const App = (): React.ReactNode => {
 
     return (
         <>
-            <header className="bg-green-400">
-                <h1 className="text-3xl font-bold">Bramble</h1>
-                <ul className="grid">
-                    <li className="">Pipelines</li>
-                    <li className="">Executions</li>
-                </ul>
+            <header className="">
+                <h1 className="">Bramble</h1>
             </header>
-            <div className="bg-green-200 w-screen h-screen">
+            <div className="">
                 <>
                     <input
                         className=""
@@ -74,10 +70,7 @@ const App = (): React.ReactNode => {
                     />
 
                     <button
-                        className="
-                        text-white 
-                        bg-green-800 
-                        rounded"
+                        className="btn btn-primary"
                         onClick={() => {
                             const ns: string | undefined =
                                 inputRef.current?.value;
@@ -89,15 +82,12 @@ const App = (): React.ReactNode => {
                     >
                         Get pipelines
                     </button>
-                    <div className="divide-y divide-slate-400 bg-green">
+                    <div className="">
                         {pipelines.length !== 0 && (
                             <h1>Pipelines in the {namespace} namespace</h1>
                         )}
                         <ul
-                            className="
-                            divide-y 
-                            divide-slate-400 
-                            w-fit"
+                            className=""
                         >
                             {pipelines.map(
                                 (
@@ -107,10 +97,7 @@ const App = (): React.ReactNode => {
                                     pipeline && (
                                         <li
                                             key={index}
-                                            className="
-                                            hover:border-10 
-                                            hover:border-black
-                                            hover:border-solid"
+                                            className=""
                                             onClick={() => {
                                                 setFocusedPipeline(index);
                                                 console.log(
