@@ -1,1 +1,3 @@
 k8s-manifests/
+bin/
+config/

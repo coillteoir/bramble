@@ -6,8 +6,11 @@ build: vet
 run:
 	go run .
 
+docker-build-dev:
+	docker build -t ${OWNER}/bramble-git-proxy --target debug . 
+
 docker-build:
-	docker build -t ${OWNER}/bramble-git-proxy .
+	docker build -t ${OWNER}/bramble-git-proxy --target release . 
 
 docker-push:
 	docker push ${OWNER}/bramble-git-proxy

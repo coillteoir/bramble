@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: git-proxy-config
+  namespace: bramble
+data:
+  config.yaml: |
+    - provider: github
+      owner: coillteoir
+      repo: bramble
+      pairings:
+        master: bramble-release
+        develop: bramble-dev
+        git-proxy: bramble-dev

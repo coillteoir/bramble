@@ -64,7 +64,9 @@ var rootCmd = &cobra.Command{
 			return err
 		}
 
-		// k8sClient, err := initClient()
+		k8sClient, err := initClient()
+
+		fmt.Println(k8sClient)
 
 		http.HandleFunc("/webhook", func(writer http.ResponseWriter, request *http.Request) {
 			response, err := processPushEvent(request, config, sugar)
