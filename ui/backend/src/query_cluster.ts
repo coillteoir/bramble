@@ -1,4 +1,4 @@
-import { Pipeline, PLtask } from "./bramble_types";
+import { pipelinesBrambleDev } from "./bramble-types";
 
 const k8s = require("@kubernetes/client-node");
 
@@ -24,25 +24,43 @@ export const getPods = async (namespace: string) => {
   }
 };
 
-export const getPipelines = async (ns: string): Promise<Pipeline[] | Error> => {
+export const getPipelines = async (
+  namespace: string,
+): Promise<pipelinesBrambleDev.v1alpha1.Pipeline[] | Error> => {
   try {
     const response = await k8sCRDApi.listNamespacedCustomObject(
       "pipelines.bramble.dev",
       "v1alpha1",
-      ns,
+      namespace,
       "pipelines",
     );
-    const pipelines: Pipeline[] = response?.body?.items.map((pipeline: any) => {
-      return new Pipeline(
-        { name: pipeline.metadata.name, namespace: ns },
-        {
-          tasks: pipeline.spec.tasks.map((task: PLtask) => {
-            return new PLtask(task.name, task.spec);
-          }),
-        },
-      );
-    });
+    const pipelines: pipelinesBrambleDev.v1alpha1.Pipeline[] =
+      response?.body?.items.map((pipeline: any) => {
+        return new pipelinesBrambleDev.v1alpha1.Pipeline(pipeline);
+      });
     return pipelines;
+  } catch (err: any) {
+    const ret = new Error(err.message);
+    throw ret;
+    return ret;
+  }
+};
+
+export const getExecutions = async (
+  namespace: string,
+): Promise<pipelinesBrambleDev.v1alpha1.Execution[] | Error> => {
+  try {
+    const response = await k8sCRDApi.listNamespacedCustomObject(
+      "pipelines.bramble.dev",
+      "v1alpha1",
+      namespace,
+      "executions",
+    );
+    const executions: pipelinesBrambleDev.v1alpha1.Execution[] =
+      response?.body?.items.map((execution: any) => {
+        return new pipelinesBrambleDev.v1alpha1.Execution(execution);
+      });
+    return executions;
   } catch (err: any) {
     const ret = new Error(err.message);
     throw ret;

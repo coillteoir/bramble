@@ -13,6 +13,7 @@
     "kubernetes-types": "^1.26.0"
   },
   "devDependencies": {
+    "@kubernetes-models/apimachinery": "^1.2.1",
     "@types/express": "^4.17.21",
     "@types/node": "^20.9.0",
     "@typescript-eslint/eslint-plugin": "^6.11.0",

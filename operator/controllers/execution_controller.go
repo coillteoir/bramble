@@ -91,7 +91,6 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 		Name:      execution.Spec.Pipeline,
 		Namespace: execution.ObjectMeta.Namespace,
 	}, pipeline)
-
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -109,7 +108,6 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 	// Check if volume exists
 	pvList := &corev1.PersistentVolumeList{}
 	err = reconciler.Client.List(ctx, pvList)
-
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -119,7 +117,6 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 			if p.Status.Phase == corev1.VolumeBound || p.Status.Phase == corev1.VolumeAvailable {
 				execution.Status.VolumeProvisioned = true
 				err = reconciler.Status().Update(ctx, execution)
-
 				if err != nil {
 					return ctrl.Result{}, err
 				}
@@ -171,7 +168,6 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	err = reconciler.Client.List(ctx, exePods, listOptions)
-
 	if err != nil {
 		return ctrl.Result{}, err
 	}

@@ -2,7 +2,7 @@ import React from "react";
 
 import ReactFlow, { Node, Edge } from "reactflow";
 
-import { Pipeline } from "./bramble_types.ts";
+import { pipelinesBrambleDev } from "./bramble-types";
 
 import {
     getLayoutedElements,
@@ -11,11 +11,13 @@ import {
 } from "./PipelineGraph.tsx";
 
 // https://codesandbox.io/p/sandbox/romantic-bas-z2v5wm?file=%2FApp.js%3A63%2C51&utm_medium=sandpack
-const PipelineView = (props: { pipeline: Pipeline }): React.ReactNode => {
-    const pl: Pipeline = props.pipeline;
+const PipelineView = (props: {
+    pipeline: pipelinesBrambleDev.v1alpha1.Pipeline;
+}): React.ReactNode => {
+    const pl: pipelinesBrambleDev.v1alpha1.Pipeline = props.pipeline;
     const layouted = getLayoutedElements(
-        pl.spec.tasks ? generateNodes(pl.spec.tasks) : ([] as Node[]),
-        pl.spec.tasks ? generateEdges(pl.spec.tasks) : ([] as Edge[])
+        pl.spec?.tasks ? generateNodes(pl.spec?.tasks) : ([] as Node[]),
+        pl.spec?.tasks ? generateEdges(pl.spec?.tasks) : ([] as Edge[])
     );
 
     const nodes = [...layouted.nodes];
@@ -23,7 +25,7 @@ const PipelineView = (props: { pipeline: Pipeline }): React.ReactNode => {
 
     return (
         <>
-            <h2 className="">Pipeline: {pl.metadata.name}</h2>
+            <h2 className="">Pipeline: {pl.metadata?.name}</h2>
             <div
                 className=""
                 style={{

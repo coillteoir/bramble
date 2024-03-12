@@ -1,5 +1,3 @@
-import { PLtask } from "./bramble_types.ts";
-
 import { Node, Edge } from "reactflow";
 import Dagre from "@dagrejs/dagre";
 
@@ -25,36 +23,72 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
     };
 };
 
-export const generateNodes = (tasks: PLtask[]): Node[] => {
-    return tasks.map((task: PLtask): Node => {
-        return {
-            id: task.name,
-            width: 120,
-            height: 50,
-            position: { x: 0, y: 0 },
-            data: {
-                label: (
-                    <div>
-                        <p>{task.name}</p>
-                    </div>
-                ),
-            },
+export const generateNodes = (
+    tasks: {
+        name: string;
+        spec: {
+            image: string;
+            command: string[];
+            dependencies?: string[] | undefined;
         };
-    });
-};
+    }[]
+): Node[] =>
+    tasks.map(
+        (task: {
+            name: string;
+            spec: {
+                image: string;
+                command: string[];
+                dependencies?: string[] | undefined;
+            };
+        }): Node => {
+            return {
+                id: task.name,
+                width: 120,
+                height: 50,
+                position: { x: 0, y: 0 },
+                data: {
+                    label: (
+                        <div>
+                            <p>{task.name}</p>
+                        </div>
+                    ),
+                },
+            };
+        }
+    );
 
-export const generateEdges = (tasks: PLtask[]): Edge[] => {
-    return tasks
-        .map((task: PLtask): Edge[] => {
-            return task.spec.dependencies
-                ? task.spec.dependencies.map((dep: string, i: number): Edge => {
-                      return {
-                          id: task.name + i.toString(),
-                          target: dep,
-                          source: task.name,
-                      };
-                  })
-                : ([] as Edge[]);
-        })
+export const generateEdges = (
+    tasks: {
+        name: string;
+        spec: {
+            image: string;
+            command: string[];
+            dependencies?: string[] | undefined;
+        };
+    }[]
+): Edge[] =>
+    tasks
+        .map(
+            (task: {
+                name: string;
+                spec: {
+                    image: string;
+                    command: string[];
+                    dependencies?: string[] | undefined;
+                };
+            }): Edge[] => {
+                return task.spec.dependencies
+                    ? task.spec.dependencies.map(
+                          (dep: string, i: number): Edge => {
+                              return {
+                                  id: task.name + i.toString(),
+                                  target: dep,
+                                  source: task.name,
+                              };
+                          }
+                      )
+                    : ([] as Edge[]);
+            }
+        )
         .flat();
-};

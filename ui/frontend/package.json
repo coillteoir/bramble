@@ -16,12 +16,14 @@
         "reactflow": "^11.10.3"
     },
     "devDependencies": {
+        "@kubernetes-models/apimachinery": "^1.2.1",
         "@types/react": "^18.2.43",
         "@types/react-dom": "^18.2.17",
         "@typescript-eslint/eslint-plugin": "^6.14.0",
         "@typescript-eslint/parser": "^6.14.0",
         "@vitejs/plugin-react": "^4.2.1",
         "autoprefixer": "^10.4.17",
+        "daisyui": "^4.7.2",
         "eslint": "^8.56.0",
         "eslint-plugin-react": "^7.33.2",
         "eslint-plugin-react-hooks": "^4.6.0",

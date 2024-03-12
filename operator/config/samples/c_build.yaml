@@ -8,16 +8,28 @@ spec:
       spec:
         image: gcc
         command:
-          ["gcc","-Wall","-Wextra","-Werror","-o","ctml","src/main.c"]
+          ["gcc"
+          ,"-Wall"
+          ,"-Wextra"
+          ,"-Werror"
+          ,"-o"
+          ,"/src/ctml"
+          ,"/src/src/main.c"]
         dependencies:
           - check
-          - ubuntu
+          - test
     - name: check
       spec:
         image: ghcr.io/facthunder/cppcheck:latest
         command:
           - "true"
-    - name: ubuntu
+        dependencies:
+        - format
+    - name: format
       spec:
         image: ubuntu
-        command: ["sleep", "10"]
+        command: ["astyle", "--diff", "."]
+    - name: test
+      spec:
+        image: ninja
+        command: ["ninja", "test", "/src/"]

@@ -1,10 +1,7 @@
-metadata:
-  name: bramble
-spec:
-  git-repo:
-    provider: github
-    owner: coillteoir
-    repo: bramble
-  branches:
-    - branch-pattern: ^master$|^main$
-      pipeline: bramble-release
+- provider: github
+  owner: coillteoir
+  repo: bramble
+  pairings:
+    master: bramble-release
+    develop: bramble-dev
+    git-proxy: bramble-dev

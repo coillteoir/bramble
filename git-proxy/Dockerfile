@@ -20,7 +20,16 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o br
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.io/distroless/static:nonroot
+
+FROM alpine as debug
+WORKDIR /
+COPY --from=builder /workspace/bramble-git-proxy .
+USER 65532:65532
+
+ENTRYPOINT ["/bramble-git-proxy"]
+
+
+FROM gcr.io/distroless/static:nonroot as release
 WORKDIR /
 COPY --from=builder /workspace/bramble-git-proxy .
 USER 65532:65532
