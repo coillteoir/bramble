@@ -21,3 +21,8 @@ build_push: build_all push_all
 
 teardown:
 	kind delete cluster
+
+crd-generate:
+	make -C operator manifests
+	npx @kubernetes-models/crd-generate --input operator/config/crd/bases/* --output ui/frontend/src/bramble-types
+	npx @kubernetes-models/crd-generate --input operator/config/crd/bases/* --output ui/backend/src/bramble-types

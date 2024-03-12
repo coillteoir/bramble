@@ -46,8 +46,6 @@ type PLTask struct {
 	Name string `json:"name"`
 	// Spec of given task
 	Spec TaskSpec `json:"spec"`
-	// Tasks to be ran before `
-	Dependencies []string `json:"dependencies,omitempty"`
 }
 
 // PipelineSpec defines the desired state of Pipeline

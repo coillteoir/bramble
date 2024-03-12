@@ -54,11 +54,6 @@ spec:
                 description: Allows developers to create a list of tasks
                 items:
                   properties:
-                    dependencies:
-                      description: Tasks to be ran before `
-                      items:
-                        type: string
-                      type: array
                     name:
                       description: Name of task to be ran
                       type: string

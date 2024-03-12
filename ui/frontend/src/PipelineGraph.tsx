@@ -1,6 +1,4 @@
-import { PLtask } from "./bramble_types.ts";
-
-import ReactFlow, { Node, Edge } from "reactflow";
+import { Node, Edge } from "reactflow";
 import Dagre from "@dagrejs/dagre";
 
 // https://codesandbox.io/p/sandbox/romantic-bas-z2v5wm?file=%2FApp.js%3A63%2C51&utm_medium=sandpack
@@ -25,37 +23,72 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
     };
 };
 
-export const generateNodes = (tasks: PLtask[]): Node[] => {
-    return tasks.map((task: PLtask, i: number): Node => {
-        return {
-            id: task.name,
-            position: { x: 0, y: i * 200 },
-            data: {
-                label: (
-                    <div>
-                        <p>Name: {task.name}</p>
-                        <p>Image: {task.spec.image}</p>
-                        <p>Command: {task.spec.command.join(" ")}</p>
-                    </div>
-                ),
-            },
+export const generateNodes = (
+    tasks: {
+        name: string;
+        spec: {
+            image: string;
+            command: string[];
+            dependencies?: string[] | undefined;
         };
-    });
-};
+    }[]
+): Node[] =>
+    tasks.map(
+        (task: {
+            name: string;
+            spec: {
+                image: string;
+                command: string[];
+                dependencies?: string[] | undefined;
+            };
+        }): Node => {
+            return {
+                id: task.name,
+                width: 120,
+                height: 50,
+                position: { x: 0, y: 0 },
+                data: {
+                    label: (
+                        <div>
+                            <p>{task.name}</p>
+                        </div>
+                    ),
+                },
+            };
+        }
+    );
 
-export const generateEdges = (tasks: PLtask[]): Edge[] => {
-    return tasks
-        .map((task: PLtask): Edge[] => {
-            return task.spec.dependencies
-                ? task.spec.dependencies.map((dep: string, i: number): Edge => {
-                      return {
-                          id: task.name + i.toString(),
-                          target: dep,
-                          source: task.name,
-                          type: "output",
-                      };
-                  })
-                : ([] as Edge[]);
-        })
+export const generateEdges = (
+    tasks: {
+        name: string;
+        spec: {
+            image: string;
+            command: string[];
+            dependencies?: string[] | undefined;
+        };
+    }[]
+): Edge[] =>
+    tasks
+        .map(
+            (task: {
+                name: string;
+                spec: {
+                    image: string;
+                    command: string[];
+                    dependencies?: string[] | undefined;
+                };
+            }): Edge[] => {
+                return task.spec.dependencies
+                    ? task.spec.dependencies.map(
+                          (dep: string, i: number): Edge => {
+                              return {
+                                  id: task.name + i.toString(),
+                                  target: dep,
+                                  source: task.name,
+                              };
+                          }
+                      )
+                    : ([] as Edge[]);
+            }
+        )
         .flat();
-};
