@@ -1,0 +1,5 @@
+resources:
+- cluster-ip.yaml
+- deployment.yaml
+- lb.yaml
+- nodeport.yaml
