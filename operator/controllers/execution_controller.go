@@ -47,7 +47,6 @@ type ExecutionReconciler struct {
 
 const (
 	executionFinalizer = "executions.pipelines.bramble.dev/finalizer"
-	sourceRoot         = "/src/"
 	pvSuffix           = "-pv"
 )
 
@@ -104,8 +103,6 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	matrix := generateAssociationMatrix(pipeline)
 
-	var pv *corev1.PersistentVolume
-
 	var pvc *corev1.PersistentVolumeClaim
 
 	// Check if volume exists
@@ -128,7 +125,8 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	if !execution.Status.VolumeProvisioned {
-		err = initExecution(ctx, reconciler, execution, pv, pvc)
+		err = initExecution(ctx, reconciler, execution, pvc)
+
 		if err != nil {
 			return ctrl.Result{}, err
 		}
@@ -153,12 +151,6 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 				pvc = &pvcList.Items[i]
 			}
 		}
-	}
-
-	if err != nil {
-		logger.Error(err, "Couldn't update execution")
-
-		return ctrl.Result{}, err
 	}
 
 	exePods := &corev1.PodList{}
@@ -192,11 +184,6 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 		}
 	}
 
-	err = reconciler.Status().Update(ctx, execution)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
 	// NOTE This algorithm assumes tasks are in their topological order
 	// Needs to be reworked to handle unsorted matricies
 
@@ -227,10 +214,6 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 			}
 		}
 
-		err = reconciler.Update(ctx, execution)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
 	}
 
 	if !controllerutil.ContainsFinalizer(execution, executionFinalizer) {
@@ -240,6 +223,10 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 		if err != nil {
 			return ctrl.Result{}, err
 		}
+	}
+	err = reconciler.Status().Update(ctx, execution)
+	if err != nil {
+		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{RequeueAfter: time.Duration(1 * time.Second)}, nil

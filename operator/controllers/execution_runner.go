@@ -42,60 +42,46 @@ func generateAssociationMatrix(pipeline *pipelinesv1alpha1.Pipeline) [][]int {
 	return matrix
 }
 
-// REFACTOR: return slice of pods per execution.
-
-// I think creating a custom struct to handle execution task logic would be the move
-// This function will have 10 args by the time it's finished.
-func executeUsingDfs(
-	matrix [][]int,
+func validateTask(
 	start int,
-	visited []bool,
 	pipeline *pipelinesv1alpha1.Pipeline,
 	execution *pipelinesv1alpha1.Execution,
 	podList *corev1.PodList,
-	pvc *corev1.PersistentVolumeClaim,
-) ([]*corev1.Pod, error) {
+) (bool, error) {
 	logger := log.Log.WithName(fmt.Sprintf("Execution: %v", execution.ObjectMeta.Name))
 
-	visited[start] = true
-
 	task := pipeline.Spec.Tasks[start]
-
-	podsToExecute := make([]*corev1.Pod, 0)
-
-	// podlist logic goes here
-	// Check task has run/is running
 
 	for _, pod := range podList.Items {
 		if pod.ObjectMeta.Labels["bramble-task"] == task.Name {
 			baseStr := fmt.Sprintf("Execution: %v Task: %v", execution.ObjectMeta.Name, task.Name)
 
+			logger.Info(fmt.Sprintf("%v %v", baseStr, pod.Status.Phase))
+
 			switch pod.Status.Phase {
 			case corev1.PodRunning, corev1.PodPending:
-				logger.Info(fmt.Sprintf("%v %v", baseStr, pod.Status.Phase))
+				return false, nil
 
-				return nil, nil
 			case corev1.PodSucceeded:
-				logger.Info(fmt.Sprintf("%v %v", baseStr, pod.Status.Phase))
 
 				if start == 0 {
 					execution.Status.Completed = true
-
-					return nil, nil
+					return false, nil
 				}
+				return false, nil
 
-				return nil, nil
 			case corev1.PodFailed:
-				logger.Info(fmt.Sprintf("%v %v", baseStr, pod.Status.Phase))
-				return nil, fmt.Errorf("pod: %v failed", pod.ObjectMeta.Name)
+				return false, fmt.Errorf("pod: %v failed", pod.ObjectMeta.Name)
+
 			default:
 				logger.Info(fmt.Sprintf("%v %v Pod created but Phase undefined", baseStr, pod.Status.Phase))
-				return nil, nil
+				return false, nil
 			}
 		}
 	}
 
 	logger.Info(fmt.Sprintf("Checking dependencies of task: %v", task.Name))
+
 	// Check dependencies have completed before running task.
 	count := len(task.Spec.Dependencies)
 
@@ -118,8 +104,39 @@ func executeUsingDfs(
 		)
 	}
 
+	return count == 0, nil
+}
+
+// I think creating a custom struct to handle execution task logic would be the move
+// This function will have 10 args by the time it's finished.
+func executeUsingDfs(
+	matrix [][]int,
+	start int,
+	visited []bool,
+	pipeline *pipelinesv1alpha1.Pipeline,
+	execution *pipelinesv1alpha1.Execution,
+	podList *corev1.PodList,
+	pvc *corev1.PersistentVolumeClaim,
+) ([]*corev1.Pod, error) {
+	logger := log.Log.WithName(fmt.Sprintf("Execution: %v", execution.ObjectMeta.Name))
+
+	visited[start] = true
+
+	task := pipeline.Spec.Tasks[start]
+
+	podsToExecute := make([]*corev1.Pod, 0)
+
+	toRun, err := validateTask(
+		start,
+		pipeline,
+		execution,
+		podList,
+	)
+	if err != nil {
+		return nil, err
+	}
 	// BUG: When running controller-manger in cluster, pods are created multiple times and executions do not work
-	if count == 0 {
+	if toRun {
 		logger.Info(fmt.Sprintf("Executing task: %v", task.Name))
 
 		pod, err := runTask(execution, &task, pvc)
@@ -130,8 +147,6 @@ func executeUsingDfs(
 		podsToExecute = append(podsToExecute, pod)
 
 		return podsToExecute, nil
-	} else if count < 0 {
-		return nil, fmt.Errorf("execution: %v has created too many pods", execution.ObjectMeta.Name)
 	}
 
 	for i, node := range matrix[start] {

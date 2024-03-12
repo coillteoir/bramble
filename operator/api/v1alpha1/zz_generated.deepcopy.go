@@ -107,8 +107,8 @@ func (in *ExecutionStatus) DeepCopyInto(out *ExecutionStatus) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
-	if in.Suceeded != nil {
-		in, out := &in.Suceeded, &out.Suceeded
+	if in.Succeeded != nil {
+		in, out := &in.Succeeded, &out.Succeeded
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}

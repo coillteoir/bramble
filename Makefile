@@ -1,5 +1,10 @@
 OWNER?=davidlynchsd
 
+init:
+	make -C operator
+	make -C ui
+	make -C git-proxy
+
 build_all:
 	make -C operator docker-build OWNER=${OWNER}
 	make -C ui docker-build OWNER=${OWNER}

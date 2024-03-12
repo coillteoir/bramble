@@ -27,18 +27,21 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+const (
+	sourceRoot = "/src/"
+)
+
 func initExecution(
 	ctx context.Context,
 	r *ExecutionReconciler,
 	execution *pipelinesv1alpha1.Execution,
-	pv *corev1.PersistentVolume,
 	pvc *corev1.PersistentVolumeClaim,
 ) error {
 	logger := log.Log.WithName(fmt.Sprintf("Execution: %v", execution.ObjectMeta.Name))
 	if !execution.Status.VolumeProvisioned {
 		logger.Info("Provisioning PV")
 
-		pv = &corev1.PersistentVolume{
+		pv := &corev1.PersistentVolume{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:   execution.ObjectMeta.Name + pvSuffix,
 				Labels: map[string]string{"bramble-execution": execution.ObjectMeta.Name},

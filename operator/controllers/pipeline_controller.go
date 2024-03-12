@@ -89,7 +89,7 @@ func validateDependencies(pipeline *pipelinesv1alpha1.Pipeline) error {
 		}
 
 		if !depflag {
-			return fmt.Errorf("Invalid dependency: %v. Not referenced in the pipeline. Please apply the task to the cluster, or describe it within the pipeline", dep)
+			return fmt.Errorf("Invalid dependency: %v. Not referenced in pipeline. Please apply the task to the cluster, or describe it within the pipeline", dep)
 		}
 	}
 

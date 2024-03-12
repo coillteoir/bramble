@@ -41,7 +41,7 @@ const App = (): React.ReactNode => {
     const [focusedPipeline, setFocusedPipeline] = useState<number>(0);
     const [focusedExecution, setFocusedExecution] = useState<number>(0);
 
-    const [pipelines, setPipelines] = useState<Pipeline[]>(
+   const [pipelines, setPipelines] = useState<Pipeline[]>(
         new Array<Pipeline>()
     );
 
