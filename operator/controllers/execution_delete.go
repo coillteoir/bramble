@@ -66,14 +66,12 @@ func teardownExecution(ctx context.Context, reconciler *ExecutionReconciler, exe
 	}
 	pvcList := &corev1.PersistentVolumeClaimList{}
 	err = reconciler.Client.List(ctx, pvcList, listOptions)
-
 	if err != nil {
 		return err
 	}
 
 	for i := range pvcList.Items {
 		err = reconciler.Client.Delete(ctx, &pvcList.Items[i])
-
 		if err != nil {
 			return err
 		}
@@ -81,14 +79,12 @@ func teardownExecution(ctx context.Context, reconciler *ExecutionReconciler, exe
 
 	pvList := &corev1.PersistentVolumeList{}
 	err = reconciler.Client.List(ctx, pvList)
-
 	if err != nil {
 		return err
 	}
 
 	for i, pv := range pvList.Items {
 		if pv.ObjectMeta.Name == execution.ObjectMeta.Name+"-pv" {
-
 			err = reconciler.Client.Delete(ctx, &pvList.Items[i])
 			if err != nil {
 				return err
@@ -104,7 +100,6 @@ func teardownExecution(ctx context.Context, reconciler *ExecutionReconciler, exe
 
 	controllerutil.RemoveFinalizer(execution, executionFinalizer)
 	err = reconciler.Update(ctx, execution)
-
 	if err != nil {
 		return err
 	}

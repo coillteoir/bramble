@@ -45,7 +45,10 @@ type ExecutionReconciler struct {
 //+kubebuilder:rbac:groups=pipelines.bramble.dev,resources=executions/finalizers,verbs=update
 //+kubebuilder:rbac:groups="",resources=pods;persistentvolumes;persistentvolumeclaims,verbs=create;delete;list;get
 
-const executionFinalizer = "executions.pipelines.bramble.dev/finalizer"
+const (
+	executionFinalizer = "executions.pipelines.bramble.dev/finalizer"
+	pvSuffix           = "-pv"
+)
 
 func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
@@ -70,13 +73,12 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 	if isExecutionMarkedToBeDeleted {
 		if controllerutil.ContainsFinalizer(execution, executionFinalizer) {
 			err = teardownExecution(ctx, reconciler, execution)
-
 			if err != nil {
 				return ctrl.Result{}, err
+			} else {
+				return ctrl.Result{}, nil
 			}
 		}
-
-		return ctrl.Result{}, nil
 	}
 
 	if execution.Status.Completed {
@@ -89,7 +91,6 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 		Name:      execution.Spec.Pipeline,
 		Namespace: execution.ObjectMeta.Namespace,
 	}, pipeline)
-
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -102,24 +103,20 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	matrix := generateAssociationMatrix(pipeline)
 
-	var pv *corev1.PersistentVolume
-
 	var pvc *corev1.PersistentVolumeClaim
 
 	// Check if volume exists
 	pvList := &corev1.PersistentVolumeList{}
 	err = reconciler.Client.List(ctx, pvList)
-
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
 	for _, p := range pvList.Items {
-		if p.ObjectMeta.Name == execution.ObjectMeta.Name+"-pv" {
+		if p.ObjectMeta.Name == execution.ObjectMeta.Name+pvSuffix {
 			if p.Status.Phase == corev1.VolumeBound || p.Status.Phase == corev1.VolumeAvailable {
 				execution.Status.VolumeProvisioned = true
 				err = reconciler.Status().Update(ctx, execution)
-
 				if err != nil {
 					return ctrl.Result{}, err
 				}
@@ -128,7 +125,7 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	if !execution.Status.VolumeProvisioned {
-		err = initExecution(ctx, reconciler, execution, pv, pvc)
+		err = initExecution(ctx, reconciler, execution, pvc)
 
 		if err != nil {
 			return ctrl.Result{}, err
@@ -156,12 +153,6 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 		}
 	}
 
-	if err != nil {
-		logger.Error(err, "Couldn't update execution")
-
-		return ctrl.Result{}, err
-	}
-
 	exePods := &corev1.PodList{}
 
 	podSelector := metav1.LabelSelector{
@@ -177,7 +168,6 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	err = reconciler.Client.List(ctx, exePods, listOptions)
-
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -194,20 +184,15 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 		}
 	}
 
-	err = reconciler.Status().Update(ctx, execution)
-
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
 	// NOTE This algorithm assumes tasks are in their topological order
 	// Needs to be reworked to handle unsorted matricies
 
 	visited := make([]bool, len(matrix))
 
-	if execution.Status.VolumeProvisioned && execution.Status.RepoCloned {
-		err = executeUsingDfs(ctx,
-			reconciler,
+	if execution.Status.VolumeProvisioned &&
+		execution.Status.RepoCloned &&
+		!execution.Status.Completed {
+		podsToExecute, err := executeUsingDfs(
 			matrix,
 			0,
 			visited,
@@ -217,8 +202,18 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 			pvc,
 		)
 		if err != nil {
+			execution.Status.Error = true
+
 			return ctrl.Result{}, err
 		}
+
+		for _, pod := range podsToExecute {
+			err = reconciler.Client.Create(ctx, pod)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+
 	}
 
 	if !controllerutil.ContainsFinalizer(execution, executionFinalizer) {
@@ -228,6 +223,10 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 		if err != nil {
 			return ctrl.Result{}, err
 		}
+	}
+	err = reconciler.Status().Update(ctx, execution)
+	if err != nil {
+		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{RequeueAfter: time.Duration(1 * time.Second)}, nil

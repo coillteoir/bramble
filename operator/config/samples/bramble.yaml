@@ -2,9 +2,27 @@ apiVersion: pipelines.bramble.dev/v1alpha1
 kind: Pipeline
 metadata:
   name: bramble-build
+  namespace: bramble
 spec:
   tasks:
-    - name: hello
+    - name: yay
       spec:
           image: ubuntu
-          command: ["sh", "-c", "echo hello world"]
+          command: ["true"]
+          dependencies:
+          - ui
+          - operator
+          - git-proxy
+    - name: ui
+      spec:
+        image: node
+        command: ["npm", "install", "&&", "npm", "run", "build"]
+
+    - name: operator
+      spec:
+        image: golang
+        command: ["go", "build", "."]
+    - name: git-proxy
+      spec:
+        image: golang
+        command: ["go", "build", "."]

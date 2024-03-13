@@ -21,13 +21,11 @@ import (
 	"fmt"
 	"slices"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	pipelinesv1alpha1 "github.com/davidlynch-sd/bramble/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	pipelinesv1alpha1 "github.com/davidlynch-sd/bramble/api/v1alpha1"
 )
 
 // PipelineReconciler reconciles a Pipeline object
@@ -52,23 +50,6 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	log.Log.WithName("pipeline_logs").
 		Info(fmt.Sprintf("Name: %v", pipeline.ObjectMeta.Name))
-
-	if !pipeline.Status.TasksCreated {
-		for _, task := range pipeline.Spec.Tasks {
-			err = r.Create(ctx, &pipelinesv1alpha1.Task{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      (pipeline.ObjectMeta.Name + "-" + task.Name),
-					Namespace: pipeline.ObjectMeta.Namespace,
-				},
-				Spec: task.Spec,
-			})
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-		}
-	}
-
-	pipeline.Status.TasksCreated = true
 
 	err = validateDependencies(pipeline)
 	if err != nil {
@@ -108,7 +89,7 @@ func validateDependencies(pipeline *pipelinesv1alpha1.Pipeline) error {
 		}
 
 		if !depflag {
-			return fmt.Errorf("Invalid dependency: %v. Not referenced in the pipeline. Please apply the task to the cluster, or describe it within the pipeline", dep)
+			return fmt.Errorf("Invalid dependency: %v. Not referenced in pipeline. Please apply the task to the cluster, or describe it within the pipeline", dep)
 		}
 	}
 

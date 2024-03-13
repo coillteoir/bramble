@@ -1,0 +1,7 @@
+name: run-git-proxy
+services:
+    bramble-git-proxy:
+        ports:
+            - 80:80
+        image: davidlynchsd/bramble-git-proxy
+        command: -p 80

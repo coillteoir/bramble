@@ -23,6 +23,45 @@ app.get("/pipelines/:ns", async (req: Request, res: Response) => {
     });
   }
 });
+app.get("/pods/:ns", async (req: Request, res: Response) => {
+    try {
+        console.log("Querying pods in:" + req.params.ns)
+        const pods = await getPods(req.params.ns)
+        console.log(pods)
+        res.json(pods)
+    } catch(error) {
+        console.log(error)
+        res.status(500).json({ error: "Pods could not be fetched" })
+    }
+})
+
+app.get("/pods/:ns", async (req: Request, res: Response) => {
+  try {
+    console.log("Querying pods in:" + req.params.ns);
+    const pods = await getPods(req.params.ns);
+    console.log(pods);
+    res.json(pods);
+  } catch (error) {
+    console.log(error);
+    res
+      .status(500)
+      .json({ error: "Cannot fetch pods from namespace: " + req.params.ns });
+  }
+});
+
+app.get("/executions/:ns", async (req: Request, res: Response) => {
+try {
+    console.log("Querying executions in:" + req.params.ns);
+    const pods = await getExecutions(req.params.ns);
+    console.log(pods);
+    res.json(pods);
+  } catch (error) {
+    console.log(error);
+    res
+      .status(500)
+      .json({ error: "Cannot fetch pods from namespace: " + req.params.ns });
+  }
+})
 
 app.get("/pods/:ns", async (req: Request, res: Response) => {
   try {

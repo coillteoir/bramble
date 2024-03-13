@@ -54,6 +54,19 @@ if [ $(echo "$ONE_TO_MANY_PODS" | wc -w) -eq '6' ]
     else echo "Incorrect amount of pods created." && FAIL=1
 fi
 
+echo "RUNNING TEST: ONE-TO-MANY PIPELINE"
+
+ONE_TO_MANY_PODS=$(kubectl get po \
+-l=bramble-execution=one-to-many \
+-o jsonpath='{.items[*].metadata.name}')
+
+echo "$ONE_TO_MANY_PODS"
+
+if [ $(echo "$ONE_TO_MANY_PODS" | wc -w) -eq '6' ] 
+    then echo "Correct amount of pods have been created." 
+    else echo "Incorrect amount of pods created." && FAIL=1
+fi
+
 kubectl delete pipeline sleepy
 kubectl delete execution sleepytest
 kubectl delete pipeline simple-test

@@ -27,6 +27,19 @@ type TaskRef struct {
 	Name         string   `json:"name"`
 	Dependencies []string `json:"dependencies,omitempty"`
 }
+type TaskSpec struct {
+	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+	// Important: Run "make" to regenerate code after modifying this file
+
+	// Docker image which will be used.
+	Image string `json:"image"`
+
+	// Command executed by the container,
+	// can be used to determine the behaviour of a CLI app.
+	Command []string `json:"command"`
+
+	Dependencies []string `json:"dependencies,omitempty"`
+}
 
 type PLTask struct {
 	// Name of task to be ran

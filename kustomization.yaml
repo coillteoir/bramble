@@ -1,0 +1,4 @@
+resources:
+- operator/config/default
+- git-proxy/k8s-manifests
+- ui/k8s-manifests
