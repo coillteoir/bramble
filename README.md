@@ -1,29 +1,39 @@
-# Bramble - A Full Stack Kubernetes Native CI/CD Framework
+# Bramble - A Full Stack Kubernetes Native CI/CD System
+
+Bramble is a CI/CD system where pipelines are designed to be run in parallel, with explicit dependency trees.
+It utilizes the features of Kubernetes to run pipelines in parallel, tasks in isolation, and utilizing the scheduling provided by Kubernetes.
 
 ## Installation
-To install and run Bramble, you will need priveliged access to a Kubernetes cluster. 
+
+To install and run Bramble, you will need priveliged access to a Kubernetes cluster.
 For installation on your development machine I recommend Kind.
 
-``` sh
+```sh
 kind create cluster
 make local_k8s_deploy
 # if you wish to run some demo pipelines then run the following
 kubectl apply -k operator/config/samples
-``` 
+```
 
 ### Build dependencies:
+
+- kustomize
+- kubectl
 - docker
 - make
 
 ### Dev dependencies
+
 - docker
 - make
 - go
 - gofumpt
 - golangci-lint
 - nodejs
+- kustomize
 
 ## Developer Experience
+
 - Pipelines as Kubernetes manifests.
 - Pipelines can have handmade tasks or plug and play pre-applied tasks.
 - Comprehensive UI for creating, executing and monitoring builds.
