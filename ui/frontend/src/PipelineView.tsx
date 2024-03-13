@@ -1,9 +1,8 @@
-import React, { useEffect } from "react";
+import React from "react";
 
-import ReactFlow, { useNodesState, useEdgesState, Node, Edge } from "reactflow";
-import Dagre from "@dagrejs/dagre";
+import ReactFlow, { Node, Edge } from "reactflow";
 
-import { Pipeline, PLtask } from "./bramble_types.ts";
+import { pipelinesBrambleDev } from "./bramble-types";
 
 import {
     getLayoutedElements,
@@ -12,25 +11,21 @@ import {
 } from "./PipelineGraph.tsx";
 
 // https://codesandbox.io/p/sandbox/romantic-bas-z2v5wm?file=%2FApp.js%3A63%2C51&utm_medium=sandpack
-const PipelineView = (props: { pipeline: Pipeline }): React.ReactNode => {
-    const pl: Pipeline = props.pipeline;
-    const [nodes, setNodes, onNodesChange] = useNodesState(
-        pl.spec.tasks ? generateNodes(pl.spec.tasks) : ([] as Node[])
-    );
-    const [edges, setEdges, onEdgesChange] = useEdgesState(
-        pl.spec.tasks ? generateEdges(pl.spec.tasks) : ([] as Edge[])
+const PipelineView = (props: {
+    pipeline: pipelinesBrambleDev.v1alpha1.Pipeline;
+}): React.ReactNode => {
+    const pl: pipelinesBrambleDev.v1alpha1.Pipeline = props.pipeline;
+    const layouted = getLayoutedElements(
+        pl.spec?.tasks ? generateNodes(pl.spec?.tasks) : ([] as Node[]),
+        pl.spec?.tasks ? generateEdges(pl.spec?.tasks) : ([] as Edge[])
     );
 
-    useEffect(() => {
-        const layouted = getLayoutedElements(nodes, edges);
-
-        setNodes([...layouted.nodes]);
-        setEdges([...layouted.edges]);
-    });
+    const nodes = [...layouted.nodes];
+    const edges = [...layouted.edges];
 
     return (
         <>
-            <h2 className="">Pipeline: {pl.metadata.name}</h2>
+            <h2 className="">Pipeline: {pl.metadata?.name}</h2>
             <div
                 className=""
                 style={{
@@ -42,15 +37,13 @@ const PipelineView = (props: { pipeline: Pipeline }): React.ReactNode => {
                 <ReactFlow
                     nodes={nodes}
                     edges={edges}
-                    onNodesChange={onNodesChange}
-                    onEdgesChange={onEdgesChange}
                     fitView
                     defaultEdgeOptions={{
                         animated: true,
                         style: {
-                            "animation-direction": "reverse",
+                            animationDirection: "reverse",
                             stroke: "green",
-                        } as any,
+                        },
                     }}
                 />
             </div>

@@ -1,5 +1,10 @@
 OWNER?=davidlynchsd
 
+init:
+	make -C operator
+	make -C ui
+	make -C git-proxy
+
 build_all:
 	make -C operator docker-build OWNER=${OWNER}
 	make -C ui docker-build OWNER=${OWNER}
@@ -21,3 +26,8 @@ build_push: build_all push_all
 
 teardown:
 	kind delete cluster
+
+crd-generate:
+	make -C operator manifests
+	npx @kubernetes-models/crd-generate --input operator/config/crd/bases/* --output ui/frontend/src/bramble-types
+	npx @kubernetes-models/crd-generate --input operator/config/crd/bases/* --output ui/backend/src/bramble-types

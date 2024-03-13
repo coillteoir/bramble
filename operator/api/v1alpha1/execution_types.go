@@ -39,8 +39,8 @@ type ExecutionStatus struct {
 
 	// Describes which tasks are currently running.
 	Running []string `json:"executing,omitempty"`
-	// Tasks which have already suceeded.
-	Suceeded []string `json:"completedTasks,omitempty"`
+	// Tasks which have already succeeded.
+	Succeeded []string `json:"completedTasks,omitempty"`
 	// States if the pipeline is completed.
 	Completed bool `json:"completed" default:"false"`
 	// States if the pipeline has failed at any point.
