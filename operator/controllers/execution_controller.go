@@ -68,16 +68,13 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, err
 	}
 
-	isExecutionMarkedToBeDeleted := execution.GetDeletionTimestamp() != nil
-
-	if isExecutionMarkedToBeDeleted {
+	if execution.GetDeletionTimestamp() != nil {
 		if controllerutil.ContainsFinalizer(execution, executionFinalizer) {
 			err = teardownExecution(ctx, reconciler, execution)
 			if err != nil {
 				return ctrl.Result{}, err
-			} else {
-				return ctrl.Result{}, nil
 			}
+			return ctrl.Result{}, nil
 		}
 	}
 
@@ -86,24 +83,10 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, nil
 	}
 
-	pipeline := &pipelinesv1alpha1.Pipeline{}
-	err = reconciler.Get(ctx, types.NamespacedName{
-		Name:      execution.Spec.Pipeline,
-		Namespace: execution.ObjectMeta.Namespace,
-	}, pipeline)
+	pipeline, err := loadPipeline(execution, reconciler, ctx)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-
-	if !pipeline.Status.ValidDeps {
-		logger.Info("Invalid dependency tree in pipeline")
-
-		return ctrl.Result{}, errors.New("invalid pipeline")
-	}
-
-	matrix := generateAssociationMatrix(pipeline)
-
-	var pvc *corev1.PersistentVolumeClaim
 
 	// Check if volume exists
 	pvList := &corev1.PersistentVolumeList{}
@@ -112,62 +95,34 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, err
 	}
 
-	for _, p := range pvList.Items {
-		if p.ObjectMeta.Name == execution.ObjectMeta.Name+pvSuffix {
-			if p.Status.Phase == corev1.VolumeBound || p.Status.Phase == corev1.VolumeAvailable {
-				execution.Status.VolumeProvisioned = true
-				err = reconciler.Status().Update(ctx, execution)
-				if err != nil {
-					return ctrl.Result{}, err
-				}
-			}
+	for _, pv := range pvList.Items {
+		if pv.ObjectMeta.Name == execution.ObjectMeta.Name+pvSuffix {
+			execution.Status.VolumeProvisioned = (pv.Status.Phase == corev1.VolumeBound || pv.Status.Phase == corev1.VolumeAvailable)
 		}
 	}
 
+	var pvc *corev1.PersistentVolumeClaim
 	if !execution.Status.VolumeProvisioned {
 		err = initExecution(ctx, reconciler, execution, pvc)
 
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-	} else {
-		pvcSelector := metav1.LabelSelector{
-			MatchLabels: map[string]string{
-				"bramble-execution": execution.ObjectMeta.Name,
-			},
-		}
-		listOptions := &client.ListOptions{
-			LabelSelector: labels.SelectorFromSet(
-				labels.Set(pvcSelector.MatchLabels),
-			),
-		}
-		pvcList := &corev1.PersistentVolumeClaimList{}
-		err = reconciler.Client.List(ctx, pvcList, listOptions)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-		for i, p := range pvcList.Items {
-			if p.ObjectMeta.Labels["bramble-execution"] == execution.ObjectMeta.Name {
-				pvc = &pvcList.Items[i]
-			}
+	}
+
+	listOptions := generateListOptions(execution)
+	pvcList, err := getExecutionPvcs(listOptions, reconciler, ctx)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	for i, p := range pvcList.Items {
+		if p.ObjectMeta.Labels["bramble-execution"] == execution.ObjectMeta.Name {
+			pvc = &pvcList.Items[i]
 		}
 	}
 
-	exePods := &corev1.PodList{}
-
-	podSelector := metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			"bramble-execution": execution.ObjectMeta.Name,
-		},
-	}
-
-	listOptions := &client.ListOptions{
-		LabelSelector: labels.SelectorFromSet(
-			labels.Set(podSelector.MatchLabels),
-		),
-	}
-
-	err = reconciler.Client.List(ctx, exePods, listOptions)
+	exePods, err := getExecutionPods(listOptions, reconciler, ctx)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -187,6 +142,7 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 	// NOTE This algorithm assumes tasks are in their topological order
 	// Needs to be reworked to handle unsorted matricies
 
+	matrix := generateAssociationMatrix(pipeline)
 	visited := make([]bool, len(matrix))
 
 	if execution.Status.VolumeProvisioned &&
@@ -218,18 +174,82 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	if !controllerutil.ContainsFinalizer(execution, executionFinalizer) {
 		controllerutil.AddFinalizer(execution, executionFinalizer)
+	}
 
-		err = reconciler.Update(ctx, execution)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
+	err = reconciler.Update(ctx, execution)
+	if err != nil {
+		return ctrl.Result{}, err
 	}
 	err = reconciler.Status().Update(ctx, execution)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	return ctrl.Result{RequeueAfter: time.Duration(1 * time.Second)}, nil
+	return ctrl.Result{RequeueAfter: time.Duration(time.Second)}, nil
+}
+
+func loadPipeline(
+	execution *pipelinesv1alpha1.Execution,
+	reconciler *ExecutionReconciler,
+	ctx context.Context,
+) (*pipelinesv1alpha1.Pipeline, error) {
+	pipeline := &pipelinesv1alpha1.Pipeline{}
+	err := reconciler.Get(ctx, types.NamespacedName{
+		Name:      execution.Spec.Pipeline,
+		Namespace: execution.ObjectMeta.Namespace,
+	}, pipeline)
+	if err != nil {
+		return nil, err
+	}
+
+	if !pipeline.Status.ValidDeps {
+		// logger.Info("Invalid dependency tree in pipeline")
+
+		return nil, errors.New("invalid pipeline")
+	}
+	return pipeline, nil
+}
+
+func generateListOptions(execution *pipelinesv1alpha1.Execution) *client.ListOptions {
+	selector := metav1.LabelSelector{
+		MatchLabels: map[string]string{
+			"bramble-execution": execution.ObjectMeta.Name,
+		},
+	}
+
+	return &client.ListOptions{
+		LabelSelector: labels.SelectorFromSet(
+			labels.Set(selector.MatchLabels),
+		),
+	}
+}
+
+func getExecutionPods(
+	listOptions *client.ListOptions,
+	reconciler *ExecutionReconciler,
+	ctx context.Context,
+) (*corev1.PodList, error) {
+	exePods := &corev1.PodList{}
+
+	err := reconciler.Client.List(ctx, exePods, listOptions)
+	if err != nil {
+		return nil, err
+	}
+	return exePods, nil
+}
+
+func getExecutionPvcs(
+	listOptions *client.ListOptions,
+	reconciler *ExecutionReconciler,
+	ctx context.Context,
+) (*corev1.PersistentVolumeClaimList, error) {
+	pvcList := &corev1.PersistentVolumeClaimList{}
+
+	err := reconciler.Client.List(ctx, pvcList, listOptions)
+	if err != nil {
+		return nil, err
+	}
+	return pvcList, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
