@@ -133,7 +133,7 @@ export interface IExecution {
      */
     "completed": boolean;
     /**
-     * Tasks which have already completed.
+     * Tasks which have already succeeded.
      */
     "completedTasks"?: Array<string>;
     /**
