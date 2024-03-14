@@ -61,11 +61,15 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	logger := log.Log.WithName(fmt.Sprintf("Execution: %v", execution.ObjectMeta.Name))
-
 	if execution.Status.Error {
 		logger.Error(err, "Execution in failed state")
 
-		return ctrl.Result{}, err
+		return ctrl.Result{}, errors.New("Execution in failed state")
+	}
+	if execution.Status.Completed {
+		logger.Info("Completed!")
+
+		return ctrl.Result{}, nil
 	}
 
 	if execution.GetDeletionTimestamp() != nil {
@@ -76,11 +80,6 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 			}
 			return ctrl.Result{}, nil
 		}
-	}
-
-	if execution.Status.Completed {
-		logger.Info("Completed!")
-		return ctrl.Result{}, nil
 	}
 
 	pipeline, err := loadPipeline(execution, reconciler, ctx)
@@ -142,12 +141,12 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 	// NOTE This algorithm assumes tasks are in their topological order
 	// Needs to be reworked to handle unsorted matricies
 
-	matrix := generateAssociationMatrix(pipeline)
-	visited := make([]bool, len(matrix))
-
 	if execution.Status.VolumeProvisioned &&
-		execution.Status.RepoCloned &&
-		!execution.Status.Completed {
+		execution.Status.RepoCloned && !execution.Status.Completed {
+
+		matrix := generateAssociationMatrix(pipeline)
+		visited := make([]bool, len(matrix))
+
 		podsToExecute, err := executeUsingDfs(
 			matrix,
 			0,
