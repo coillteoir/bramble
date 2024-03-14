@@ -1,22 +1,24 @@
 import React from "react";
 
 import ReactFlow, { Node, Edge } from "reactflow";
-
+import {Pod} from "kubernetes-models/v1";
 import { pipelinesBrambleDev } from "./bramble-types";
 
 import {
     getLayoutedElements,
     generateNodes,
     generateEdges,
-} from "./PipelineGraph.tsx";
+} from "./ExecutionGraph.tsx";
 
 // https://codesandbox.io/p/sandbox/romantic-bas-z2v5wm?file=%2FApp.js%3A63%2C51&utm_medium=sandpack
-const PipelineView = (props: {
+const ExecutionView = (props: {
     pipeline: pipelinesBrambleDev.v1alpha1.Pipeline;
+    execution: pipelinesBrambleDev.v1alpha1.Execution;
+    pods: Pod[];
 }): React.ReactNode => {
     const pl: pipelinesBrambleDev.v1alpha1.Pipeline = props.pipeline;
     const layouted = getLayoutedElements(
-        pl.spec?.tasks ? generateNodes(pl.spec?.tasks) : ([] as Node[]),
+        pl.spec?.tasks ? generateNodes(pl.spec?.tasks, props.pods, props.execution) : ([] as Node[]),
         pl.spec?.tasks ? generateEdges(pl.spec?.tasks) : ([] as Edge[])
     );
 
@@ -51,4 +53,4 @@ const PipelineView = (props: {
     );
 };
 
-export { PipelineView };
+export { ExecutionView };
