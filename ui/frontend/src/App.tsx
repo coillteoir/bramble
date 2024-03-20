@@ -1,6 +1,8 @@
 import { PipelineView } from "./PipelineView.tsx";
+import { ExecutionView } from "./ExecutionView.tsx";
 import { PipelineList } from "./PipelineList.tsx";
 import { pipelinesBrambleDev } from "./bramble-types";
+import { Pod } from "kubernetes-models/v1";
 import Pipeline = pipelinesBrambleDev.v1alpha1.Pipeline;
 import Execution = pipelinesBrambleDev.v1alpha1.Execution;
 import "reactflow/dist/style.css";
@@ -39,9 +41,10 @@ const App = (): React.ReactNode => {
     const [namespace, setNamespace] = useState<string>("default");
 
     const [focusedPipeline, setFocusedPipeline] = useState<number>(0);
-    const [focusedExecution, setFocusedExecution] = useState<number>(0);
+    const [focusedExecution, setFocusedExecution] = useState<string>("");
+    const [podList, setPods] = useState<Pod[]>(new Array<Pod>());
 
-   const [pipelines, setPipelines] = useState<Pipeline[]>(
+    const [pipelines, setPipelines] = useState<Pipeline[]>(
         new Array<Pipeline>()
     );
 
@@ -68,8 +71,9 @@ const App = (): React.ReactNode => {
                                 setExecutions(jsonData);
                                 break;
                             }
-                            default: {
-                                console.log(jsonData);
+                            case "pods": {
+                                setPods(jsonData);
+                                break;
                             }
                         }
                     });
@@ -79,6 +83,7 @@ const App = (): React.ReactNode => {
         };
         await fetchRes("pipelines");
         await fetchRes("executions");
+        await fetchRes("pods");
     };
 
     useEffect(() => {
@@ -99,10 +104,25 @@ const App = (): React.ReactNode => {
                 pipelines={pipelines}
                 executions={executions}
                 setFocusedPipeline={setFocusedPipeline}
+                setFocusedExecution={setFocusedExecution}
             />
-            {pipelines.length !== 0 && pipelines[focusedPipeline] && (
-                <PipelineView pipeline={pipelines[focusedPipeline]} />
-            )}
+            {(!focusedExecution &&
+                pipelines.length !== 0 &&
+                pipelines[focusedPipeline] && (
+                    <PipelineView pipeline={pipelines[focusedPipeline]} />
+                )) ||
+                (focusedExecution && (
+                    <ExecutionView
+                        pipeline={pipelines[focusedPipeline]}
+                        execution={
+                            executions.filter(
+                                (exe: Execution) =>
+                                    exe.metadata?.name == focusedExecution
+                            )[0]
+                        }
+                        pods={podList}
+                    />
+                ))}
         </>
     );
 };

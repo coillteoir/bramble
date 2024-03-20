@@ -1,31 +1,32 @@
 OWNER?=davidlynchsd
 
-init:
+build: crd-generate
 	make -C operator
 	make -C ui
 	make -C git-proxy
 
-build_all:
+docker-build: crd-generate
 	make -C operator docker-build OWNER=${OWNER}
 	make -C ui docker-build OWNER=${OWNER}
 	make -C git-proxy docker-build OWNER=${OWNER}
 
-build_deploy: build_all push_all k8s_deploy
+build-deploy: build-push k8s-deploy
 
-k8s_deploy:
-	make -C operator deploy
-	make -C ui k8s
-	make -C git-proxy local-k8s-deploy
+manifests: crd-generate
+	kustomize build . > resources.yaml
 
-push_all:
+k8s-deploy: manifests
+	kubectl apply -f resources.yaml
+
+k8s-teardown: 
+	kubectl delete -f resources.yaml
+
+docker-push:
 	make -C operator docker-push OWNER=${OWNER}
 	make -C ui docker-push OWNER=${OWNER}
 	make -C git-proxy docker-push OWNER=${OWNER}
 
-build_push: build_all push_all
-
-teardown:
-	kind delete cluster
+build-push: docker-build docker-push
 
 crd-generate:
 	make -C operator manifests
