@@ -8,11 +8,12 @@ import Execution = pipelinesBrambleDev.v1alpha1.Execution;
 import "reactflow/dist/style.css";
 import React, { useState, useEffect, useRef } from "react";
 import "./index.css";
+
 const NamespaceSearch = (props: {
-    inputRef: any;
-    setNamespace: any;
+    inputRef: React.RefObject<HTMLInputElement>;
+    setNamespace: React.Dispatch<React.SetStateAction<string>>;
 }): React.ReactNode => (
-    <>
+    <div>
         <div className="label">
             <span className="label-text">Enter Namespace</span>
         </div>
@@ -34,14 +35,16 @@ const NamespaceSearch = (props: {
         >
             Get pipelines
         </button>
-    </>
+    </div>
 );
 
 const App = (): React.ReactNode => {
     const [namespace, setNamespace] = useState<string>("default");
 
     const [focusedPipeline, setFocusedPipeline] = useState<number>(0);
-    const [focusedExecution, setFocusedExecution] = useState<string>("");
+    const [focusedExecution, setFocusedExecution] = useState<
+        string | undefined
+    >("");
     const [podList, setPods] = useState<Pod[]>(new Array<Pod>());
 
     const [pipelines, setPipelines] = useState<Pipeline[]>(
@@ -92,37 +95,43 @@ const App = (): React.ReactNode => {
 
     return (
         <>
-            <header className="">
-                <h1 className="text-3xl font-bold">Bramble</h1>
-            </header>
-            <NamespaceSearch inputRef={inputRef} setNamespace={setNamespace} />
+            <React.StrictMode>
+                <header className="">
+                    <h1 className="text-3xl font-bold">Bramble</h1>
+                </header>
 
-            <PipelineList
-                namespace={namespace}
-                focusedPipeline={focusedPipeline}
-                focusedExecution={focusedExecution}
-                pipelines={pipelines}
-                executions={executions}
-                setFocusedPipeline={setFocusedPipeline}
-                setFocusedExecution={setFocusedExecution}
-            />
-            {(!focusedExecution &&
-                pipelines.length !== 0 &&
-                pipelines[focusedPipeline] && (
-                    <PipelineView pipeline={pipelines[focusedPipeline]} />
-                )) ||
-                (focusedExecution && (
-                    <ExecutionView
-                        pipeline={pipelines[focusedPipeline]}
-                        execution={
-                            executions.filter(
-                                (exe: Execution) =>
-                                    exe.metadata?.name == focusedExecution
-                            )[0]
-                        }
-                        pods={podList}
-                    />
-                ))}
+                <NamespaceSearch
+                    inputRef={inputRef}
+                    setNamespace={setNamespace}
+                />
+
+                <PipelineList
+                    namespace={namespace}
+                    focusedPipeline={focusedPipeline}
+                    focusedExecution={focusedExecution}
+                    pipelines={pipelines}
+                    executions={executions}
+                    setFocusedPipeline={setFocusedPipeline}
+                    setFocusedExecution={setFocusedExecution}
+                />
+                {(!focusedExecution &&
+                    pipelines.length !== 0 &&
+                    pipelines[focusedPipeline] && (
+                        <PipelineView pipeline={pipelines[focusedPipeline]} />
+                    )) ||
+                    (focusedExecution && (
+                        <ExecutionView
+                            pipeline={pipelines[focusedPipeline]}
+                            execution={
+                                executions.filter(
+                                    (exe: Execution) =>
+                                        exe.metadata?.name === focusedExecution
+                                )[0]
+                            }
+                            pods={podList}
+                        />
+                    ))}
+            </React.StrictMode>
         </>
     );
 };

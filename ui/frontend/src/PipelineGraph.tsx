@@ -41,21 +41,19 @@ export const generateNodes = (
                 command: string[];
                 dependencies?: string[] | undefined;
             };
-        }): Node => {
-            return {
-                id: task.name,
-                width: 120,
-                height: 50,
-                position: { x: 0, y: 0 },
-                data: {
-                    label: (
-                        <div>
-                            <p>{task.name}</p>
-                        </div>
-                    ),
-                },
-            };
-        }
+        }): Node => ({
+            id: task.name,
+            width: 120,
+            height: 50,
+            position: { x: 0, y: 0 },
+            data: {
+                label: (
+                    <div>
+                        <p>{task.name}</p>
+                    </div>
+                ),
+            },
+        })
     );
 
 export const generateEdges = (
@@ -77,18 +75,15 @@ export const generateEdges = (
                     command: string[];
                     dependencies?: string[] | undefined;
                 };
-            }): Edge[] => {
-                return task.spec.dependencies
+            }): Edge[] =>
+                task.spec.dependencies
                     ? task.spec.dependencies.map(
-                          (dep: string, i: number): Edge => {
-                              return {
-                                  id: task.name + i.toString(),
-                                  target: dep,
-                                  source: task.name,
-                              };
-                          }
+                          (dep: string, i: number): Edge => ({
+                              id: task.name + i.toString(),
+                              target: dep,
+                              source: task.name,
+                          })
                       )
-                    : ([] as Edge[]);
-            }
+                    : ([] as Edge[])
         )
         .flat();

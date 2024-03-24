@@ -1,7 +1,7 @@
 import { Node, Edge } from "reactflow";
 import { Pod } from "kubernetes-models/v1";
 import Dagre from "@dagrejs/dagre";
-import {pipelinesBrambleDev} from "./bramble-types"
+import { pipelinesBrambleDev } from "./bramble-types";
 
 // https://codesandbox.io/p/sandbox/romantic-bas-z2v5wm?file=%2FApp.js%3A63%2C51&utm_medium=sandpack
 export const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
@@ -47,29 +47,26 @@ export const generateNodes = (
             };
         }): Node => {
             // get pod of current task
-            const taskPod:Pod = pods.filter(
+            const taskPod: Pod = pods.filter(
                 (pod: Pod) =>
-                    execution.metadata?.name ==
+                    execution.metadata?.name ===
                         pod.metadata?.labels?.["bramble-execution"] &&
-                    pod.metadata?.labels?.["bramble-task"] == task.name
+                    pod.metadata?.labels?.["bramble-task"] === task.name
             )[0];
             const colour = (() => {
-                if(taskPod === undefined) {
-                    return "orange"
+                if (taskPod === undefined) {
+                    return "orange";
                 }
                 switch (taskPod.status?.phase) {
                     case "Succeeded":
                         return "green";
-                        break;
                     case "Running":
                         return "blue";
-                        break;
                     case "Failed":
                         return "red";
-                        break;
                 }
-                return "orange"
-            })()
+                return "orange";
+            })();
 
             return {
                 id: task.name,
@@ -116,18 +113,15 @@ export const generateEdges = (
                     command: string[];
                     dependencies?: string[] | undefined;
                 };
-            }): Edge[] => {
-                return task.spec.dependencies
+            }): Edge[] =>
+                task.spec.dependencies
                     ? task.spec.dependencies.map(
-                          (dep: string, i: number): Edge => {
-                              return {
-                                  id: task.name + i.toString(),
-                                  target: dep,
-                                  source: task.name,
-                              };
-                          }
+                          (dep: string, i: number): Edge => ({
+                              id: task.name + i.toString(),
+                              target: dep,
+                              source: task.name,
+                          })
                       )
-                    : ([] as Edge[]);
-            }
+                    : ([] as Edge[])
         )
         .flat();

@@ -1,7 +1,7 @@
 import React from "react";
 
 import ReactFlow, { Node, Edge } from "reactflow";
-import {Pod} from "kubernetes-models/v1";
+import { Pod } from "kubernetes-models/v1";
 import { pipelinesBrambleDev } from "./bramble-types";
 
 import {
@@ -18,7 +18,9 @@ const ExecutionView = (props: {
 }): React.ReactNode => {
     const pl: pipelinesBrambleDev.v1alpha1.Pipeline = props.pipeline;
     const layouted = getLayoutedElements(
-        pl.spec?.tasks ? generateNodes(pl.spec?.tasks, props.pods, props.execution) : ([] as Node[]),
+        pl.spec?.tasks
+            ? generateNodes(pl.spec?.tasks, props.pods, props.execution)
+            : ([] as Node[]),
         pl.spec?.tasks ? generateEdges(pl.spec?.tasks) : ([] as Edge[])
     );
 
