@@ -13,12 +13,6 @@ const NamespaceSearch = (props: {
     setNamespace: React.Dispatch<React.SetStateAction<string>>;
 }): React.ReactNode => (
     <div className="">
-        {/*
-        <div className="label">
-            <span className="label-text">Enter Namespace</span>
-        </div>
-       */}
-
         <input
             className="input input-bordered input-primary w-3/5"
             type="text"
@@ -47,24 +41,32 @@ const View = (props: {
     executions: Array<Execution>;
     focusedExecution: string | undefined;
     namespace: string;
-}): React.ReactNode =>
-    (!props.focusedExecution &&
-        props.pipelines.length !== 0 &&
-        props.pipelines[props.focusedPipeline] && (
-            <PipelineView pipeline={props.pipelines[props.focusedPipeline]} />
-        )) ||
-    (props.focusedExecution && (
-        <ExecutionView
-            pipeline={props.pipelines[props.focusedPipeline]}
-            execution={
-                props.executions.filter(
-                    (exe: Execution) =>
-                        exe.metadata?.name === props.focusedExecution
-                )[0]
-            }
-            namespace={props.namespace}
-        />
-    ));
+}): React.ReactNode => {
+    console.log(props.focusedPipeline, props.focusedExecution);
+    if (props.focusedExecution) {
+        return (
+            <ExecutionView
+                pipeline={props.pipelines[props.focusedPipeline]}
+                execution={
+                    props.executions.filter(
+                        (exe: Execution) =>
+                            exe.metadata?.name === props.focusedExecution
+                    )[0]
+                }
+                namespace={props.namespace}
+            />
+        );
+    } else {
+        return (
+            props.pipelines.length !== 0 &&
+            props.pipelines[props.focusedPipeline] && (
+                <PipelineView
+                    pipeline={props.pipelines[props.focusedPipeline]}
+                />
+            )
+        );
+    }
+};
 
 const App = (): React.ReactNode => {
     const [namespace, setNamespace] = useState<string>("default");
@@ -119,7 +121,7 @@ const App = (): React.ReactNode => {
         <>
             <React.StrictMode>
                 <header className="">
-                    <h1 className="text-3xl font-bold bg-slate-800">Bramble</h1>
+                    <h1 className="bg-slate-800 text-3xl font-bold">Bramble</h1>
                 </header>
                 <div className="w-1/3 lg:w-1/6">
                     <NamespaceSearch

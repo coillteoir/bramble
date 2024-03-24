@@ -11,7 +11,7 @@ const ExecutionList = (props: {
         React.SetStateAction<string | undefined>
     >;
 }): React.ReactNode => (
-    <ul className="bg-slate-600">
+    <ul className="menu rounded-box bg-slate-700">
         {props.executions
             .filter((exe: Execution) => exe.spec?.pipeline === props.pipeline)
             .map((exe: Execution, i: number) => (
@@ -37,19 +37,17 @@ export const PipelineList = (props: {
         React.SetStateAction<string | undefined>
     >;
 }): React.ReactNode => (
-    <div className="">
+    <div className="inline-block">
         {props.pipelines.length !== 0 && (
             <h1>Pipelines in the {props.namespace} namespace</h1>
         )}
-        <ul className="">
+        <ul className="menu menu-vertical rounded-box">
             {props.pipelines.map((pipeline: Pipeline, index: number) => (
                 <li
                     key={index}
                     className=""
                     onClick={() => {
                         props.setFocusedPipeline(index);
-                        props.setFocusedExecution("");
-                        console.log(props.pipelines[props.focusedPipeline]);
                     }}
                 >
                     <p className="">{pipeline.metadata?.name}</p>
