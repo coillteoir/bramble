@@ -4,11 +4,9 @@ import ReactFlow, { Node, Edge } from "reactflow";
 
 import { pipelinesBrambleDev } from "./bramble-types";
 
-import {
-    getLayoutedElements,
-    generateNodes,
-    generateEdges,
-} from "./PipelineGraph.tsx";
+import { getLayoutedElements } from "./Layout.tsx";
+
+import { generateNodes, generateEdges } from "./PipelineGraph.tsx";
 
 // https://codesandbox.io/p/sandbox/romantic-bas-z2v5wm?file=%2FApp.js%3A63%2C51&utm_medium=sandpack
 const PipelineView = (props: {

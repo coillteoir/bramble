@@ -13,7 +13,8 @@ const NamespaceSearch = (props: {
     setNamespace: React.Dispatch<React.SetStateAction<string>>;
 }): React.ReactNode => (
     <div className="">
-        {/* <div className="label">
+        {/*
+        <div className="label">
             <span className="label-text">Enter Namespace</span>
         </div>
        */}
@@ -112,7 +113,7 @@ const App = (): React.ReactNode => {
 
     useEffect(() => {
         fetchNamespacedResources();
-    });
+    }, [namespace]);
 
     return (
         <>
@@ -132,7 +133,6 @@ const App = (): React.ReactNode => {
                         executions={executions}
                         focusedPipeline={focusedPipeline}
                         setFocusedPipeline={setFocusedPipeline}
-                        focusedExecution={focusedExecution}
                         setFocusedExecution={setFocusedExecution}
                     />
                 </div>

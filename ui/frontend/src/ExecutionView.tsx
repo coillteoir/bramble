@@ -4,11 +4,8 @@ import ReactFlow, { Node, Edge } from "reactflow";
 import { Pod } from "kubernetes-models/v1";
 import { pipelinesBrambleDev } from "./bramble-types";
 
-import {
-    getLayoutedElements,
-    generateNodes,
-    generateEdges,
-} from "./ExecutionGraph.tsx";
+import { getLayoutedElements } from "./Layout.tsx";
+import { generateNodes, generateEdges } from "./ExecutionGraph.tsx";
 
 const ExecutionView = (props: {
     pipeline: pipelinesBrambleDev.v1alpha1.Pipeline;
