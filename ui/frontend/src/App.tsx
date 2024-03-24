@@ -2,7 +2,6 @@ import { PipelineView } from "./PipelineView.tsx";
 import { ExecutionView } from "./ExecutionView.tsx";
 import { PipelineList } from "./PipelineList.tsx";
 import { pipelinesBrambleDev } from "./bramble-types";
-import { Pod } from "kubernetes-models/v1";
 import Pipeline = pipelinesBrambleDev.v1alpha1.Pipeline;
 import Execution = pipelinesBrambleDev.v1alpha1.Execution;
 import "reactflow/dist/style.css";
@@ -13,18 +12,21 @@ const NamespaceSearch = (props: {
     inputRef: React.RefObject<HTMLInputElement>;
     setNamespace: React.Dispatch<React.SetStateAction<string>>;
 }): React.ReactNode => (
-    <div>
-        <div className="label">
+    <div className="">
+        {/* <div className="label">
             <span className="label-text">Enter Namespace</span>
         </div>
+       */}
+
         <input
-            className="input input-bordered input-primary"
+            className="input input-bordered input-primary w-3/5"
             type="text"
             ref={props.inputRef}
+            placeholder="Enter Namespace"
         />
 
         <button
-            className="btn btn-primary"
+            className="btn btn-primary w-2/5"
             onClick={() => {
                 const ns: string | undefined = props.inputRef.current?.value;
                 console.log(ns);
@@ -38,6 +40,31 @@ const NamespaceSearch = (props: {
     </div>
 );
 
+const View = (props: {
+    pipelines: Array<Pipeline>;
+    focusedPipeline: number;
+    executions: Array<Execution>;
+    focusedExecution: string | undefined;
+    namespace: string;
+}): React.ReactNode =>
+    (!props.focusedExecution &&
+        props.pipelines.length !== 0 &&
+        props.pipelines[props.focusedPipeline] && (
+            <PipelineView pipeline={props.pipelines[props.focusedPipeline]} />
+        )) ||
+    (props.focusedExecution && (
+        <ExecutionView
+            pipeline={props.pipelines[props.focusedPipeline]}
+            execution={
+                props.executions.filter(
+                    (exe: Execution) =>
+                        exe.metadata?.name === props.focusedExecution
+                )[0]
+            }
+            namespace={props.namespace}
+        />
+    ));
+
 const App = (): React.ReactNode => {
     const [namespace, setNamespace] = useState<string>("default");
 
@@ -45,7 +72,6 @@ const App = (): React.ReactNode => {
     const [focusedExecution, setFocusedExecution] = useState<
         string | undefined
     >("");
-    const [podList, setPods] = useState<Pod[]>(new Array<Pod>());
 
     const [pipelines, setPipelines] = useState<Pipeline[]>(
         new Array<Pipeline>()
@@ -74,10 +100,6 @@ const App = (): React.ReactNode => {
                                 setExecutions(jsonData);
                                 break;
                             }
-                            case "pods": {
-                                setPods(jsonData);
-                                break;
-                            }
                         }
                     });
             } catch (error) {
@@ -86,7 +108,6 @@ const App = (): React.ReactNode => {
         };
         await fetchRes("pipelines");
         await fetchRes("executions");
-        await fetchRes("pods");
     };
 
     useEffect(() => {
@@ -97,40 +118,31 @@ const App = (): React.ReactNode => {
         <>
             <React.StrictMode>
                 <header className="">
-                    <h1 className="text-3xl font-bold">Bramble</h1>
+                    <h1 className="text-3xl font-bold bg-slate-800">Bramble</h1>
                 </header>
+                <div className="w-1/3 lg:w-1/6">
+                    <NamespaceSearch
+                        inputRef={inputRef}
+                        setNamespace={setNamespace}
+                    />
 
-                <NamespaceSearch
-                    inputRef={inputRef}
-                    setNamespace={setNamespace}
-                />
-
-                <PipelineList
-                    namespace={namespace}
-                    focusedPipeline={focusedPipeline}
-                    focusedExecution={focusedExecution}
+                    <PipelineList
+                        namespace={namespace}
+                        pipelines={pipelines}
+                        executions={executions}
+                        focusedPipeline={focusedPipeline}
+                        setFocusedPipeline={setFocusedPipeline}
+                        focusedExecution={focusedExecution}
+                        setFocusedExecution={setFocusedExecution}
+                    />
+                </div>
+                <View
                     pipelines={pipelines}
+                    focusedPipeline={focusedPipeline}
                     executions={executions}
-                    setFocusedPipeline={setFocusedPipeline}
-                    setFocusedExecution={setFocusedExecution}
+                    focusedExecution={focusedExecution}
+                    namespace={namespace}
                 />
-                {(!focusedExecution &&
-                    pipelines.length !== 0 &&
-                    pipelines[focusedPipeline] && (
-                        <PipelineView pipeline={pipelines[focusedPipeline]} />
-                    )) ||
-                    (focusedExecution && (
-                        <ExecutionView
-                            pipeline={pipelines[focusedPipeline]}
-                            execution={
-                                executions.filter(
-                                    (exe: Execution) =>
-                                        exe.metadata?.name === focusedExecution
-                                )[0]
-                            }
-                            pods={podList}
-                        />
-                    ))}
             </React.StrictMode>
         </>
     );

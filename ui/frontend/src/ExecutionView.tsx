@@ -10,22 +10,41 @@ import {
     generateEdges,
 } from "./ExecutionGraph.tsx";
 
-// https://codesandbox.io/p/sandbox/romantic-bas-z2v5wm?file=%2FApp.js%3A63%2C51&utm_medium=sandpack
 const ExecutionView = (props: {
     pipeline: pipelinesBrambleDev.v1alpha1.Pipeline;
     execution: pipelinesBrambleDev.v1alpha1.Execution;
-    pods: Pod[];
+    namespace: string;
 }): React.ReactNode => {
+    const [pods, setPods] = React.useState<Array<Pod>>(new Array<Pod>());
+
+    const fetchNamespacedPods = async (namespace: string) => {
+        console.log("Fetching pods in:", namespace);
+        try {
+            const baseUrl: string = "http://localhost:5555/";
+            await fetch(baseUrl + "pods" + "/" + namespace)
+                .then((response) => response.json())
+                .then((jsonData) => {
+                    setPods(jsonData);
+                });
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
     const pl: pipelinesBrambleDev.v1alpha1.Pipeline = props.pipeline;
     const layouted = getLayoutedElements(
         pl.spec?.tasks
-            ? generateNodes(pl.spec?.tasks, props.pods, props.execution)
+            ? generateNodes(pl.spec?.tasks, pods, props.execution)
             : ([] as Node[]),
         pl.spec?.tasks ? generateEdges(pl.spec?.tasks) : ([] as Edge[])
     );
 
     const nodes = [...layouted.nodes];
     const edges = [...layouted.edges];
+
+    React.useEffect(() => {
+        fetchNamespacedPods(props.namespace);
+    });
 
     return (
         <>
