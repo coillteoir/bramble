@@ -28,8 +28,6 @@ type TaskRef struct {
 	Dependencies []string `json:"dependencies,omitempty"`
 }
 type TaskSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
 
 	// Docker image which will be used.
 	Image string `json:"image"`
@@ -37,7 +35,9 @@ type TaskSpec struct {
 	// Command executed by the container,
 	// can be used to determine the behaviour of a CLI app.
 	Command []string `json:"command"`
-
+	// Directory in which task container executes
+	Workdir string `json:"workdir,omitempty"`
+	// Tasks which need to run before current task
 	Dependencies []string `json:"dependencies,omitempty"`
 }
 
@@ -58,8 +58,7 @@ type PipelineSpec struct {
 
 // PipelineStatus defines the observed state of Pipeline
 type PipelineStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Shows that the pipeline has a valid dependency tree.
 	ValidDeps    bool `json:"validdeps,omitempty" default:"false"`
 	TasksCreated bool `json:"taskscreated,omitempty" default:"false"`
 }

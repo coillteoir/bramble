@@ -64,7 +64,7 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 	if execution.Status.Error {
 		logger.Error(err, "Execution in failed state")
 
-		return ctrl.Result{}, errors.New("Execution in failed state")
+		return ctrl.Result{}, errors.New("execution in failed state")
 	}
 	if execution.Status.Completed {
 		logger.Info("Completed!")
@@ -145,6 +145,7 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 		execution.Status.RepoCloned && !execution.Status.Completed {
 
 		matrix := generateAssociationMatrix(pipeline)
+		logger.Info(fmt.Sprintf("MATRIX: %v", matrix))
 		visited := make([]bool, len(matrix))
 
 		podsToExecute, err := executeUsingDfs(
