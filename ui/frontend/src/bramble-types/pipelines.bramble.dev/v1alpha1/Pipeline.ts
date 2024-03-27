@@ -80,6 +80,7 @@ const schema = {
                   "workdir": {
                     "type": "string",
                     "nullable": true
+
                   }
                 },
                 "required": [
@@ -212,6 +213,8 @@ constructor(data?: ModelData<IPipeline>) {
   } as IPipeline);
 }
 }
+}
+
 
 
 setSchema(Pipeline, schemaId, () => {
