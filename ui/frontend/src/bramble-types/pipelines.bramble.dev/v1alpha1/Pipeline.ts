@@ -76,6 +76,11 @@ const schema = {
                   },
                   "image": {
                     "type": "string"
+                  },
+                  "workdir": {
+                    "type": "string",
+                    "nullable": true
+
                   }
                 },
                 "required": [
@@ -159,11 +164,18 @@ export interface IPipeline {
          * Command executed by the container, can be used to determine the behaviour of a CLI app.
          */
         "command": Array<string>;
+        /**
+         * Tasks which need to run before current task
+         */
         "dependencies"?: Array<string>;
         /**
          * Docker image which will be used.
          */
         "image": string;
+        /**
+         * Directory in which task container executes
+         */
+        "workdir"?: string;
       };
     }>;
   };
@@ -173,7 +185,7 @@ export interface IPipeline {
   "status"?: {
     "taskscreated"?: boolean;
     /**
-     * INSERT ADDITIONAL STATUS FIELD - define observed state of cluster Important: Run "make" to regenerate code after modifying this file
+     * Shows that the pipeline has a valid dependency tree.
      */
     "validdeps"?: boolean;
   };
@@ -201,6 +213,8 @@ constructor(data?: ModelData<IPipeline>) {
   } as IPipeline);
 }
 }
+}
+
 
 
 setSchema(Pipeline, schemaId, () => {

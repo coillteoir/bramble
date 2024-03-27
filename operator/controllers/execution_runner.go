@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"fmt"
+	"path/filepath"
 	"slices"
 
 	pipelinesv1alpha1 "github.com/davidlynch-sd/bramble/api/v1alpha1"
@@ -208,7 +209,7 @@ func runTask(
 							MountPath: sourceRoot,
 						},
 					},
-					WorkingDir: sourceRoot + execution.ObjectMeta.Name,
+					WorkingDir: filepath.Join(sourceRoot, execution.ObjectMeta.Name, task.Spec.Workdir),
 				},
 			},
 			Volumes: []corev1.Volume{

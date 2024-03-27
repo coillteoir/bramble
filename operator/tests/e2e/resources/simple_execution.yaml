@@ -2,6 +2,7 @@ apiVersion: pipelines.bramble.dev/v1alpha1
 kind: Execution
 metadata:
   name: simple-test
+  namespace: testns
 spec:
   repo: https://github.com/coillteoir/ctml
   branch: master
