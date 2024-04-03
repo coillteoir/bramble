@@ -10,48 +10,40 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
 
-app.get("/pipelines/:ns", async (req: Request, res: Response) => {
-  try {
-    console.log("Querying pipelines in:" + req.params.ns);
-    const pipelines = await getPipelines(req.params.ns);
-    console.log(pipelines);
-    res.json(pipelines);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({
-      error: "Cannot fetch pipelines from namespace: " + req.params.ns,
-    });
-  }
-});
-
-app.get("/pods/:ns", async (req: Request, res: Response) => {
-  try {
-    console.log("Querying pods in:" + req.params.ns);
-    const pods = await getPods(req.params.ns);
-    console.log(pods);
-    res.json(pods);
-  } catch (error) {
-    console.log(error);
-    res
-      .status(500)
-      .json({ error: "Cannot fetch pods from namespace: " + req.params.ns });
-  }
-});
-
-
-app.get("/executions/:ns", async (req: Request, res: Response) => {
-try {
-    console.log("Querying executions in:" + req.params.ns);
-    const executions = await getExecutions(req.params.ns);
-    console.log(executions);
-    res.json(executions);
-  } catch (error) {
-    console.log(error);
-    res
-      .status(500)
-      .json({ error: "Cannot fetch executions from namespace: " + req.params.ns });
-  }
-})
+app.get(
+  "/resources/:resource/:namespace",
+  async (req: Request, res: Response) => {
+    console.log(`querying ${req.params.resource} in ${req.params.namespace}`);
+    try {
+      switch (req.params.resource) {
+        case "pods": {
+          const pods = await getPods(req.params.namespace);
+          console.log(pods);
+          res.json(pods);
+          break;
+        }
+        case "pipelines": {
+          const pipelines = await getPipelines(req.params.namespace);
+          console.log(pipelines);
+          res.json(pipelines);
+          break;
+        }
+        case "executions": {
+          const executions = await getExecutions(req.params.namespace);
+          console.log(executions);
+          res.json(executions);
+          break;
+        }
+        default:
+          console.log(`Cannot query unknown resource: ${req.params.resource}`);
+      }
+    } catch (error) {
+      res.status(500).json({
+        error: `Cannnot fetch ${req.params.resource} from namespace: ${req.params.namespace}`,
+      });
+    }
+  },
+);
 
 app.listen(port, () => {
   console.log("Server is running");

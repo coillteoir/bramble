@@ -6,8 +6,9 @@ module.exports = {
         "plugin:@typescript-eslint/recommended",
         "plugin:react-hooks/recommended",
         "plugin:react/recommended",
+        "plugin:tailwindcss/recommended",
     ],
-    ignorePatterns: ["dist", ".eslintrc.cjs"],
+    ignorePatterns: ["dist", ".eslintrc.cjs", "src/bramble-types"],
     parser: "@typescript-eslint/parser",
     plugins: ["react-refresh", "react-hooks"],
     rules: {
@@ -19,7 +20,12 @@ module.exports = {
         "no-shadow": ["error"],
         "no-unneeded-ternary": ["warn"],
         "no-unreachable": ["error"],
+        eqeqeq: ["error"],
+        "max-depth": ["error", 4],
         "react-hooks/rules-of-hooks": ["error"],
         "react-hooks/exhaustive-deps": ["warn"],
+        "react/react-in-jsx-scope": ["warn"],
+        "no-var": ["error"],
+        "@typescript-eslint/no-explicit-any": ["warn"],
     },
 };
