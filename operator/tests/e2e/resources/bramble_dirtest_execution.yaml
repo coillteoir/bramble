@@ -1,0 +1,9 @@
+apiVersion: pipelines.bramble.dev/v1alpha1
+kind: Execution
+metadata:
+  name: dirtest
+  namespace: testns
+spec:
+  repo: https://github.com/coillteoir/bramble
+  branch: master
+  pipeline: dirtest

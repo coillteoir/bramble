@@ -146,8 +146,8 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 		matrix := generateAssociationMatrix(pipeline)
 		logger.Info(fmt.Sprintf("MATRIX: %v", matrix))
-		visited := make([]bool, len(matrix))
 
+		visited := make([]bool, len(matrix))
 		podsToExecute, err := executeUsingDfs(
 			matrix,
 			0,
@@ -159,7 +159,6 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 		)
 		if err != nil {
 			execution.Status.Error = true
-
 			return ctrl.Result{}, err
 		}
 
@@ -185,7 +184,7 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, err
 	}
 
-	return ctrl.Result{RequeueAfter: time.Duration(time.Second)}, nil
+	return ctrl.Result{RequeueAfter: 30 * time.Duration(time.Second)}, nil
 }
 
 func loadPipeline(

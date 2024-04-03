@@ -1,0 +1,32 @@
+apiVersion: pipelines.bramble.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: dirtest
+  namespace: testns
+spec:
+  tasks:
+    - name: root
+      spec:
+        image: ubuntu
+        command:
+        - sleep
+        - "10"
+        dependencies:
+        - operator
+        - cli
+        - git-proxy
+    - name: operator
+      spec:
+        image: golang
+        command: ["go", "build", "."]
+        workdir: operator
+    - name: git-proxy
+      spec:
+        image: golang
+        command: ["go", "build", "."]
+        workdir: git-proxy
+    - name: cli
+      spec:
+        image: golang
+        command: ["go", "build", "."]
+        workdir: cli

@@ -119,7 +119,7 @@ func Test_executeUsingDfs(t *testing.T) {
 	}
 }
 
-func Test_runTask(t *testing.T) {
+func Test_generateTaskPod(t *testing.T) {
 	type args struct {
 		execution *pipelinesv1alpha1.Execution
 		task      *pipelinesv1alpha1.PLTask
@@ -135,13 +135,13 @@ func Test_runTask(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := runTask(tt.args.execution, tt.args.task, tt.args.pvc)
+			got, err := generateTaskPod(tt.args.execution, tt.args.task, tt.args.pvc)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("runTask() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("generateTaskPod() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("runTask() = %v, want %v", got, tt.want)
+				t.Errorf("generateTaskPod() = %v, want %v", got, tt.want)
 			}
 		})
 	}

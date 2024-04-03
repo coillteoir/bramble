@@ -27,6 +27,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+const (
+	sourceVolumeName = "source-volume"
+)
+
 func generateAssociationMatrix(pipeline *pipelinesv1alpha1.Pipeline) [][]int {
 	matrix := make([][]int, len(pipeline.Spec.Tasks))
 
@@ -140,7 +144,7 @@ func executeUsingDfs(
 	if toRun {
 		logger.Info(fmt.Sprintf("Executing task: %v", task.Name))
 
-		pod, err := runTask(execution, &task, pvc)
+		pod, err := generateTaskPod(execution, &task, pvc)
 		if err != nil {
 			return nil, err
 		}
@@ -179,7 +183,7 @@ func executeUsingDfs(
 	return podsToExecute, nil
 }
 
-func runTask(
+func generateTaskPod(
 	execution *pipelinesv1alpha1.Execution,
 	task *pipelinesv1alpha1.PLTask,
 	pvc *corev1.PersistentVolumeClaim,
@@ -205,7 +209,7 @@ func runTask(
 					Command: task.Spec.Command,
 					VolumeMounts: []corev1.VolumeMount{
 						{
-							Name:      "cloner-volume",
+							Name:      sourceVolumeName,
 							MountPath: sourceRoot,
 						},
 					},
@@ -214,7 +218,7 @@ func runTask(
 			},
 			Volumes: []corev1.Volume{
 				{
-					Name: "cloner-volume",
+					Name: sourceVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
 							ClaimName: pvc.ObjectMeta.Name,

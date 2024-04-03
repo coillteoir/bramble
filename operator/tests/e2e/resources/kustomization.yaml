@@ -1,8 +1,10 @@
 resources:
-  - testns.yaml
+  - bramble_dirtest_execution.yaml
+  - bramble_dirtest_pipeline.yaml
   - one-to-many-execution.yaml
   - one-to-many-pipeline.yaml
   - simple_execution.yaml
   - simple_pipeline.yaml
   - sleepy_execution.yaml
   - sleepy_pipeline.yaml
+  - testns.yaml
