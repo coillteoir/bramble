@@ -5,6 +5,7 @@ Copyright 2024 David Lynch davite3@protonmail.com
 package cmd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -13,14 +14,20 @@ import (
 	"strings"
 	"time"
 
+	//	"bramble-git-proxy/v1alpha1"
+
 	"github.com/google/go-github/v59/github"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 	// apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	//"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	// apierrors "k8s.io/apimachinery/pkg/api/errors"
-	// meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -65,6 +72,9 @@ var rootCmd = &cobra.Command{
 		}
 
 		k8sClient, err := initClient()
+		if err != nil {
+			return err
+		}
 
 		fmt.Println(k8sClient)
 
@@ -80,6 +90,31 @@ var rootCmd = &cobra.Command{
 			if err != nil {
 				sugar.Error("Writer failed")
 			}
+		})
+
+		http.HandleFunc("/test/{pipeline}", func(writer http.ResponseWriter, request *http.Request) {
+			pipeline := request.PathValue("pipeline")
+			sugar.Infof("pipeline tested is: %s", pipeline)
+			/*
+				execution := &v1alpha1.Execution{
+					ObjectMeta: metav1.ObjectMeta{
+						GenerateName: pipeline,
+						Namespace:    "bramble",
+					},
+					Spec: v1alpha1.ExecutionSpec{
+						Repo:     "https://github.com/coillteoir/bramble",
+						Branch:   "git-proxy",
+						Pipeline: pipeline,
+					},
+				}
+			*/
+			execution := &unstructured.Unstructured{}
+
+			k8sClient.Resource(schema.GroupVersionResource{
+				Group:    "pipelines.bramble.dev",
+				Version:  "v1alpha1",
+				Resource: "executions",
+			}).Namespace("bramble").Create(context.TODO(), execution, metav1.CreateOptions{})
 		})
 
 		sugar.Infof("GIT PROXY RUNNING ON PORT: %v", port)
@@ -98,14 +133,14 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-func initClient() (*clientset.Clientset, error) {
+func initClient() (*dynamic.DynamicClient, error) {
 	if os.Getenv("IN_CLUSTER") == "TRUE" {
 		config, err := rest.InClusterConfig()
 		if err != nil {
 			return nil, err
 		}
 
-		client, err := clientset.NewForConfig(config)
+		client, err := dynamic.NewForConfig(config)
 		if err != nil {
 			return nil, err
 		}
@@ -121,15 +156,15 @@ func initClient() (*clientset.Clientset, error) {
 	if err != nil {
 		return nil, err
 	}
-	client, err := clientset.NewForConfig(config)
+	client, err := dynamic.NewForConfig(config)
 	if err != nil {
 		return nil, err
 	}
 	return client, nil
 }
 
-func loadConfig(path string) ([]proxyConfig, error) {
-	configData, err := os.ReadFile(path)
+func loadConfig(configPath string) ([]proxyConfig, error) {
+	configData, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, err
 	}
