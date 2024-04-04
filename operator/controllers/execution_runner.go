@@ -68,9 +68,8 @@ func validateTask(
 				return false, nil
 
 			case corev1.PodSucceeded:
-
 				if start == 0 {
-					execution.Status.Completed = true
+					execution.Status.Phase = pipelinesv1alpha1.ExecutionCompleted
 					return false, nil
 				}
 				return false, nil
@@ -109,7 +108,7 @@ func validateTask(
 		)
 	}
 
-	return count == 0, nil
+	return count <= 0, nil
 }
 
 // I think creating a custom struct to handle execution task logic would be the move
@@ -150,7 +149,7 @@ func executeUsingDfs(
 		}
 
 		podsToExecute = append(podsToExecute, pod)
-
+		execution.Status.Running = append(execution.Status.Running, task.Name)
 		return podsToExecute, nil
 	}
 

@@ -52,31 +52,25 @@ spec:
           status:
             description: ExecutionStatus defines the observed state of Execution.
             properties:
-              completed:
-                description: States if the pipeline is completed.
-                type: boolean
               completedTasks:
                 description: Tasks which have already succeeded.
                 items:
                   type: string
                 type: array
-              error:
-                description: States if the pipeline has failed at any point.
-                type: boolean
               executing:
                 description: Describes which tasks are currently running.
                 items:
                   type: string
                 type: array
+              phase:
+                description: Describes the state of the execution
+                type: string
               repoCloned:
                 description: Tells the controller if the repo is cloned.
                 type: boolean
               volumeProvisioned:
                 description: Shows if the PV for this execution has been provisioned.
                 type: boolean
-            required:
-            - completed
-            - error
             type: object
         type: object
     served: true

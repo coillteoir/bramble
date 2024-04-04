@@ -61,12 +61,12 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	logger := log.Log.WithName(fmt.Sprintf("Execution: %v", execution.ObjectMeta.Name))
-	if execution.Status.Error {
+	if execution.Status.Phase == pipelinesv1alpha1.ExecutionError {
 		logger.Error(err, "Execution in failed state")
 
 		return ctrl.Result{}, errors.New("execution in failed state")
 	}
-	if execution.Status.Completed {
+	if execution.Status.Phase == pipelinesv1alpha1.ExecutionCompleted {
 		logger.Info("Completed!")
 
 		return ctrl.Result{}, nil
@@ -142,7 +142,7 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 	// Needs to be reworked to handle unsorted matricies
 
 	if execution.Status.VolumeProvisioned &&
-		execution.Status.RepoCloned && !execution.Status.Completed {
+		execution.Status.RepoCloned && !(execution.Status.Phase == "completed") {
 
 		matrix := generateAssociationMatrix(pipeline)
 		logger.Info(fmt.Sprintf("MATRIX: %v", matrix))
@@ -158,7 +158,7 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 			pvc,
 		)
 		if err != nil {
-			execution.Status.Error = true
+			execution.Status.Phase = "error"
 			return ctrl.Result{}, err
 		}
 
@@ -182,9 +182,11 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 	err = reconciler.Status().Update(ctx, execution)
 	if err != nil {
 		return ctrl.Result{}, err
+	} else {
+		logger.Info(fmt.Sprintf("Updated status with: %v", execution.Status))
 	}
 
-	return ctrl.Result{RequeueAfter: 30 * time.Duration(time.Second)}, nil
+	return ctrl.Result{RequeueAfter: 15 * time.Duration(time.Second)}, nil
 }
 
 func loadPipeline(

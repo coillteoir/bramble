@@ -20,6 +20,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type executionPhase string
+
+const (
+	ExecutionInitializing executionPhase ="initializing"
+	ExecutionRunning      executionPhase ="running"
+	ExecutionError        executionPhase ="error"
+	ExecutionCompleted    executionPhase ="completed"
+)
+
 // ExecutionSpec defines the desired state of Execution.
 type ExecutionSpec struct {
 	// Reference to the pipeline which will be executed.
@@ -30,6 +39,7 @@ type ExecutionSpec struct {
 	Branch string `json:"branch"`
 }
 
+//+kubebuilder:printcolumn:name="PHASE",type=string,JSONPath=`.status.phase`
 // ExecutionStatus defines the observed state of Execution.
 type ExecutionStatus struct {
 	// Shows if the PV for this execution has been provisioned.
@@ -41,10 +51,8 @@ type ExecutionStatus struct {
 	Running []string `json:"executing,omitempty"`
 	// Tasks which have already succeeded.
 	Succeeded []string `json:"completedTasks,omitempty"`
-	// States if the pipeline is completed.
-	Completed bool `json:"completed" default:"false"`
-	// States if the pipeline has failed at any point.
-	Error bool `json:"error" default:"false"`
+	// Describes the state of the execution
+	Phase executionPhase `json:"phase,omitempty" default:"initializing"`
 }
 
 //+kubebuilder:object:root=true
