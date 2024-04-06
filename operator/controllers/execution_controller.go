@@ -141,7 +141,7 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 	// Needs to be reworked to handle unsorted matricies
 
 	if execution.Status.VolumeProvisioned &&
-		execution.Status.RepoCloned && execution.Status.Phase != "completed" {
+		execution.Status.RepoCloned && execution.Status.Phase != pipelinesv1alpha1.ExecutionCompleted {
 
 		matrix := generateAssociationMatrix(pipeline)
 		logger.Info(fmt.Sprintf("MATRIX: %v", matrix))
@@ -157,7 +157,7 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 			pvc,
 		)
 		if err != nil {
-			execution.Status.Phase = "error"
+			execution.Status.Phase = pipelinesv1alpha1.ExecutionError
 			return ctrl.Result{}, err
 		}
 
