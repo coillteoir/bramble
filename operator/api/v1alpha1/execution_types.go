@@ -23,10 +23,10 @@ import (
 type executionPhase string
 
 const (
-	ExecutionInitializing executionPhase ="initializing"
-	ExecutionRunning      executionPhase ="running"
-	ExecutionError        executionPhase ="error"
-	ExecutionCompleted    executionPhase ="completed"
+	ExecutionInitializing executionPhase = "initializing"
+	ExecutionRunning      executionPhase = "running"
+	ExecutionError        executionPhase = "error"
+	ExecutionCompleted    executionPhase = "completed"
 )
 
 // ExecutionSpec defines the desired state of Execution.
@@ -39,7 +39,6 @@ type ExecutionSpec struct {
 	Branch string `json:"branch"`
 }
 
-//+kubebuilder:printcolumn:name="PHASE",type=string,JSONPath=`.status.phase`
 // ExecutionStatus defines the observed state of Execution.
 type ExecutionStatus struct {
 	// Shows if the PV for this execution has been provisioned.

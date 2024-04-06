@@ -19,6 +19,7 @@ package controllers
 import (
 	"reflect"
 	"testing"
+
 	//	"testing/quick"
 
 	pipelinesv1alpha1 "github.com/davidlynch-sd/bramble/api/v1alpha1"
@@ -45,17 +46,17 @@ func Test_generateAssociationMatrix(t *testing.T) {
 		})
 	}
 
-	//TestMatrixSize := func(
-	//	pipeline *pipelinesv1alpha1.Pipeline,
-	//) bool {
-	//	matrix := generateAssociationMatrix(pipeline)
+	// TestMatrixSize := func(
+	// 	pipeline *pipelinesv1alpha1.Pipeline,
+	// ) bool {
+	// 	matrix := generateAssociationMatrix(pipeline)
 
-	//	return len(matrix) == len(pipeline.Spec.Tasks)
-	//}
+	// 	return len(matrix) == len(pipeline.Spec.Tasks)
+	// }
 
-	//if err := quick.Check(TestMatrixSize, nil); err != nil {
-	//	t.Error(err)
-	//}
+	// if err := quick.Check(TestMatrixSize, nil); err != nil {
+	// 	t.Error(err)
+	// }
 }
 
 func Test_validateTask(t *testing.T) {

@@ -18,15 +18,15 @@ spec:
     - name: operator
       spec:
         image: golang
-        command: ["go", "build", "."]
+        command: ["go", "vet", "."]
         workdir: operator
     - name: git-proxy
       spec:
         image: golang
-        command: ["go", "build", "."]
+        command: ["go", "vet", "."]
         workdir: git-proxy
     - name: cli
       spec:
         image: golang
-        command: ["go", "build", "."]
+        command: ["go", "vet", "."]
         workdir: cli

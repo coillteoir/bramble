@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 
 	pipelinesv1alpha1 "github.com/davidlynch-sd/bramble/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -38,12 +39,15 @@ func initExecution(
 	pvc *corev1.PersistentVolumeClaim,
 ) error {
 	logger := log.Log.WithName(fmt.Sprintf("Execution: %v", execution.ObjectMeta.Name))
+
+	executionSourcePath := filepath.Join(sourceRoot, execution.ObjectMeta.Name)
+
 	if !execution.Status.VolumeProvisioned {
 		logger.Info("Provisioning PV")
 
 		pv := &corev1.PersistentVolume{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:   execution.ObjectMeta.Name + pvSuffix,
+				Name:   fmt.Sprintf("%v-pv", execution.ObjectMeta.Name),
 				Labels: map[string]string{"bramble-execution": execution.ObjectMeta.Name},
 			},
 			Spec: corev1.PersistentVolumeSpec{
@@ -56,7 +60,7 @@ func initExecution(
 				StorageClassName: "standard",
 				PersistentVolumeSource: corev1.PersistentVolumeSource{
 					HostPath: &corev1.HostPathVolumeSource{
-						Path: sourceRoot + execution.ObjectMeta.Name,
+						Path: executionSourcePath,
 					},
 				},
 			},
@@ -73,7 +77,7 @@ func initExecution(
 
 		pvc = &corev1.PersistentVolumeClaim{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      pv.ObjectMeta.Name + "-pvc",
+				Name:      fmt.Sprintf("%v-pvc", pv.ObjectMeta.Name),
 				Namespace: execution.ObjectMeta.Namespace,
 				Labels:    map[string]string{"bramble-execution": execution.ObjectMeta.Name},
 			},
@@ -100,7 +104,7 @@ func initExecution(
 	if !execution.Status.RepoCloned {
 		clonePod := &corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      execution.ObjectMeta.Name + "-cloner",
+				Name:      fmt.Sprintf("%v-cloner", execution.ObjectMeta.Name),
 				Namespace: execution.ObjectMeta.Namespace,
 				Labels:    map[string]string{"bramble-execution": execution.ObjectMeta.Name},
 			}, Spec: corev1.PodSpec{
@@ -110,8 +114,7 @@ func initExecution(
 						Name:  "cloner",
 						Image: "alpine/git",
 						Command: []string{
-							"sh",
-							"-c",
+							"sh", "-c",
 							fmt.Sprintf("rm -rf %v && git clone %v --branch=%v %v",
 								execution.ObjectMeta.Name,
 								execution.Spec.Repo,
@@ -122,10 +125,10 @@ func initExecution(
 						VolumeMounts: []corev1.VolumeMount{
 							{
 								Name:      "cloner-volume",
-								MountPath: sourceRoot + execution.ObjectMeta.Name,
+								MountPath: executionSourcePath,
 							},
 						},
-						WorkingDir: sourceRoot + execution.ObjectMeta.Name,
+						WorkingDir: executionSourcePath,
 					},
 				},
 				Volumes: []corev1.Volume{

@@ -47,7 +47,6 @@ type ExecutionReconciler struct {
 
 const (
 	executionFinalizer = "executions.pipelines.bramble.dev/finalizer"
-	pvSuffix           = "-pv"
 )
 
 func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -95,7 +94,7 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	for _, pv := range pvList.Items {
-		if pv.ObjectMeta.Name == execution.ObjectMeta.Name+pvSuffix {
+		if pv.ObjectMeta.Name == fmt.Sprintf("%v-pv", execution.ObjectMeta.Name) {
 			execution.Status.VolumeProvisioned = (pv.Status.Phase == corev1.VolumeBound || pv.Status.Phase == corev1.VolumeAvailable)
 		}
 	}
@@ -142,7 +141,7 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 	// Needs to be reworked to handle unsorted matricies
 
 	if execution.Status.VolumeProvisioned &&
-		execution.Status.RepoCloned && !(execution.Status.Phase == "completed") {
+		execution.Status.RepoCloned && execution.Status.Phase != "completed" {
 
 		matrix := generateAssociationMatrix(pipeline)
 		logger.Info(fmt.Sprintf("MATRIX: %v", matrix))
@@ -182,8 +181,6 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 	err = reconciler.Status().Update(ctx, execution)
 	if err != nil {
 		return ctrl.Result{}, err
-	} else {
-		logger.Info(fmt.Sprintf("Updated status with: %v", execution.Status))
 	}
 
 	return ctrl.Result{RequeueAfter: 15 * time.Duration(time.Second)}, nil

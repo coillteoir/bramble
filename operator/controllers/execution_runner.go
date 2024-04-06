@@ -108,7 +108,7 @@ func validateTask(
 		)
 	}
 
-	return count <= 0, nil
+	return count == 0, nil
 }
 
 // I think creating a custom struct to handle execution task logic would be the move
@@ -155,13 +155,6 @@ func executeUsingDfs(
 
 	for i, node := range matrix[start] {
 		if node == 1 && !visited[i] {
-			logger.Info(
-				fmt.Sprintf(
-					"recursing to dependency %v of task %v",
-					pipeline.Spec.Tasks[i].Name,
-					task.Name,
-				),
-			)
 
 			downstreamPods, err := executeUsingDfs(
 				matrix,
