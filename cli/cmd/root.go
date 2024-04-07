@@ -14,6 +14,7 @@ var rootCmd = &cobra.Command{
 	Use:   "bramble",
 	Short: "A command line utility for the bramble CI/CD system",
 	// Run: func(cmd *cobra.Command, args []string) { },
+	SilenceUsage: true,
 }
 
 func Execute() {
