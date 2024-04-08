@@ -4,12 +4,10 @@ set -e
 
 TEST_DIR=/tmp/bramble-cli-test/
 GIT_TEST_DIR=$TEST_DIR/git-test
-EMPTY_TEST_DIR=$TEST_DIR/empty-test
 
 BIN=$PWD/bin/bramble
 
 mkdir -p $GIT_TEST_DIR
-mkdir -p $EMPTY_TEST_DIR
 
 testCommandSad() {
    if "$@"; then 
@@ -23,19 +21,31 @@ testCommandHappy() {
     "$@" 
 }
 
-pushd $GIT_TEST_DIR
-   printf "\n\n-----test . path, git -- sad-----\n\n"
-   testCommandSad "$BIN" init .
+cleanUpOnFailure() {
+   "$@" || (rm -rf $TEST_DIR && exit 1)
+}
 
-   printf "\n\n-----test invalid git format -- sad-----\n\n"
-   touch .git 
-   testCommandSad "$BIN" init .
-   rm .git
+printTestMSG() {
+   printf "\n\n-----test %s-----\n\n" "$@"
+}
 
-   printf "\n\n------test . path, git -- happy-----\n\n"
-   git init .
+pushd $GIT_TEST_DIR || exit
 
+   printTestMSG "no directory specified"
+   cleanUpOnFailure testCommandSad "$BIN" init
+
+   printTestMSG ". empty path -- SAD"
+   cleanUpOnFailure testCommandSad "$BIN" init .
+
+   printTestMSG "invalid git format -- SAD"
+   touch .git
+   cleanUpOnFailure testCommandSad "$BIN" init .
+   rm -f .git
+
+   printTestMSG ". path, git -- HAPPY"
+   git init . --quiet
    testCommandHappy "$BIN" init .
-popd 
+
+popd || exit
 
 rm -rf $TEST_DIR

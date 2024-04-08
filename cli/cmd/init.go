@@ -40,7 +40,7 @@ func initRepository(path string) error {
 	}
 	fmt.Printf("Created directory: '%v'\n", filepath.Join(path, ".bramble", "pipelines"))
 
-	fmt.Printf("\nBramble directory initialized at '%v'\n.", path)
+	fmt.Printf("\nBramble directory initialized at '%v'.\n", path)
 	return nil
 }
 
@@ -67,7 +67,7 @@ var initCmd = &cobra.Command{
 			if err != nil {
 				return err
 			}
-			initRepository(path)
+			return initRepository(path)
 		}
 
 		return initRepository(args[0])
