@@ -46,6 +46,8 @@ pushd $GIT_TEST_DIR || exit
    git init . --quiet
    testCommandHappy "$BIN" init .
 
+   printf "\n\nAll tests passing\n\n"
+
 popd || exit
 
 rm -rf $TEST_DIR

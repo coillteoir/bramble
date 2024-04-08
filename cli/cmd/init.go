@@ -4,16 +4,53 @@ Copyright © 2024 David Lynch davite3@protonmail.com
 package cmd
 
 import (
+	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 
+	"github.com/go-git/go-git/v5"
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
 )
 
 func checkInstallation() error {
-	return nil
+	var kubeconfig *string
+	if home := homedir.HomeDir(); home != "" {
+		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+	} else {
+		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+	}
+	flag.Parse()
+
+	// use the current context in kubeconfig
+	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	if err != nil {
+		return err
+	}
+
+	// create the clientset
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return err
+	}
+
+	namespaces, err := clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	for _, ns := range namespaces.Items {
+		if ns.ObjectMeta.Name == "bramble" {
+			return nil
+		}
+	}
+	return errors.New("could not find bramble namespace")
 }
 
 func initRepository(path string) error {
@@ -23,23 +60,31 @@ func initRepository(path string) error {
 	}
 
 	fmt.Printf("Initializing repository '%v'\n", path)
-
 	if !fileInfo.IsDir() {
 		return errors.New("file is not a directory")
 	}
 
-	if _, err = os.Stat(filepath.Join(path, ".git")); os.IsNotExist(err) {
+	repo, err := git.PlainOpen(path)
+	if err != nil {
 		return err
 	}
 
-	fmt.Printf("Git repo found at '%v'\n", path)
+	remotes, err := repo.Remotes()
+	if err != nil {
+		return err
+	}
 
+	for _, remote := range remotes {
+		fmt.Println(remote.Config().URLs[0])
+	}
+
+	fmt.Printf("Git repo found at '%v'\n", path)
 	err = os.MkdirAll(filepath.Join(path, ".bramble", "pipelines"), os.ModePerm)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Created directory: '%v'\n", filepath.Join(path, ".bramble", "pipelines"))
 
+	fmt.Printf("Created directory: '%v'\n", filepath.Join(path, ".bramble", "pipelines"))
 	fmt.Printf("\nBramble directory initialized at '%v'.\n", path)
 	return nil
 }
@@ -53,6 +98,10 @@ var initCmd = &cobra.Command{
 		}
 		if len(args) == 0 {
 			return errors.New("no path specified")
+		}
+
+		if err := checkInstallation(); err != nil {
+			return err
 		}
 
 		// Once we create the .bramble/pipelines directory,
