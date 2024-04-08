@@ -26,7 +26,7 @@ cleanUpOnFailure() {
 }
 
 printTestMSG() {
-   printf "\n\n-----test %s-----\n\n" "$@"
+   printf "\n-----test %s-----\n" "$@"
 }
 
 pushd $GIT_TEST_DIR || exit
