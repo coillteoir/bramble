@@ -134,7 +134,7 @@ var rootCmd = &cobra.Command{
 }
 
 func initClient() (*dynamic.DynamicClient, error) {
-	if os.Getenv("IN_CLUSTER") == "TRUE" {
+	if os.Getenv("KUBERNETES_SERVICE_HOST") != "" {
 		config, err := rest.InClusterConfig()
 		if err != nil {
 			return nil, err

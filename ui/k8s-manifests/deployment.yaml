@@ -24,7 +24,4 @@ spec:
           ports:
             - containerPort: 5555
               protocol: TCP
-          env:
-            - name: IN_CLUSTER
-              value: "1"
       serviceAccountName: bramble-ui-sa

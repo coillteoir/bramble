@@ -4,7 +4,7 @@ const k8s = require("@kubernetes/client-node");
 
 const kc = new k8s.KubeConfig();
 
-if (process.env.IN_CLUSTER === "1") {
+if (process.env.KUBERNETES_SERVICE_HOST !== "") {
   kc.loadFromCluster();
   console.log("Connecting to cluster from within");
 } else {
