@@ -1,0 +1,19 @@
+apiVersion: skaffold/v4beta8
+kind: Config
+metadata:
+  name: git-proxy
+build:
+  artifacts:
+    - image: davidlynchsd/bramble-git-proxy
+      docker:
+        dockerfile: Dockerfile
+manifests:
+  kustomize:
+    paths:
+      - k8s-manifests
+profiles:
+  - name: rbac
+    manifests:
+      kustomize:
+        paths:
+          - k8s-manifests/rbac

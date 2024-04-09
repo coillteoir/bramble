@@ -7,6 +7,7 @@ package cmd
 import (
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"os"
 	"time"
 
@@ -55,7 +56,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		http.HandleFunc("/webhook", func(writer http.ResponseWriter, request *http.Request) {
-			executionSpec, message, err := util.ProcessPushEvent(request, config, sugar)
+			executionSpec, err := util.ProcessPushEvent(request, config, sugar)
 			if err != nil {
 				_, err = fmt.Fprintf(writer, "ERROR: %v", err)
 				if err != nil {
@@ -64,20 +65,23 @@ var rootCmd = &cobra.Command{
 			}
 
 			util.ExecutePipeline(executionSpec, k8sClient, sugar)
-
+			message := fmt.Sprintf("executing pipeline %v on branch %v", executionSpec.Pipeline, executionSpec.Branch)
 			_, err = writer.Write([]byte(message))
 			if err != nil {
 				sugar.Error("Writer failed")
 			}
 		})
 
-		http.HandleFunc("/test/{pipeline}", func(writer http.ResponseWriter, request *http.Request) {
+		http.HandleFunc("/run/{pipeline}/{owner}/{repo}/{branch}", func(writer http.ResponseWriter, request *http.Request) {
 			pipeline := request.PathValue("pipeline")
+			owner := request.PathValue("owner")
+			repo := request.PathValue("repo")
+			branch := request.PathValue("branch")
 			sugar.Infof("pipeline tested is: %s", pipeline)
 			spec := &v1alpha1.ExecutionSpec{
 				Pipeline: pipeline,
-				Repo:     "https://github.com/coillteoir/bramble",
-				Branch:   "master",
+				Repo:     filepath.Join("https://github.com",owner, repo),
+				Branch:   branch,
 			}
 
 			err := util.ExecutePipeline(spec, k8sClient, sugar)
@@ -91,12 +95,12 @@ var rootCmd = &cobra.Command{
 			ReadHeaderTimeout: 3 * time.Second,
 		}
 
+		sugar.Infof("GIT PROXY RUNNING ON PORT: %v", port)
 		err = server.ListenAndServe()
 		if err != nil {
 			return err
 		}
 
-		sugar.Infof("GIT PROXY RUNNING ON PORT: %v", port)
 		return nil
 	},
 }

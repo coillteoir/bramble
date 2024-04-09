@@ -2,7 +2,6 @@ package util
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -10,6 +9,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"bramble-git-proxy/v1alpha1"
+
 	"github.com/google/go-github/v59/github"
 	"go.uber.org/zap"
 )
@@ -45,17 +45,17 @@ func ProcessPushEvent(
 	request *http.Request,
 	config []ProxyConfig,
 	sugar *zap.SugaredLogger,
-) (*v1alpha1.ExecutionSpec, string, error) {
+) (*v1alpha1.ExecutionSpec, error) {
 	payload, err := github.ValidatePayload(request, nil)
 	if err != nil {
 		sugar.Errorf("Invalid payload: %v", request)
-		return nil, "", err
+		return nil, err
 	}
 
 	event, err := github.ParseWebHook(github.WebHookType(request), payload)
 	if err != nil {
 		sugar.Errorf("Cannot parse webhook: %v", request)
-		return nil, "", err
+		return nil, err
 	}
 
 	switch event := event.(type) {
@@ -63,7 +63,7 @@ func ProcessPushEvent(
 		sugar.Infof("Pushed!! %v", *event.Ref)
 		branchName, found := strings.CutPrefix(*event.Ref, headPrefix)
 		if !found {
-			return nil, "", errors.New("could not parse branch name")
+			return nil, errors.New("could not parse branch name")
 		}
 
 		for _, repo := range config {
@@ -73,7 +73,7 @@ func ProcessPushEvent(
 			}
 			sugar.Infof("Push to branch: %v Pipeline: %v", branchName, repo.Pairings[branchName])
 			if _, exists := repo.Pairings[branchName]; !exists {
-				return nil, fmt.Sprintf("No pipelines are configured for branch %v", branchName), nil
+				return nil, nil
 			}
 
 			spec := &v1alpha1.ExecutionSpec{
@@ -82,11 +82,11 @@ func ProcessPushEvent(
 				Pipeline: repo.Pairings[branchName],
 			}
 
-			return spec, fmt.Sprintf("executing pipeline %v on branch %v", repo.Pairings[branchName], branchName), nil
+			return spec, nil
 		}
 	default:
 		sugar.Infof("DifferentEvent")
-		return nil, "Hello from webhook!\n", nil
+		return nil, nil
 	}
-	return nil, "", nil
+	return nil, nil
 }
