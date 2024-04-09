@@ -23,6 +23,7 @@ import (
 	"time"
 
 	pipelinesv1alpha1 "github.com/davidlynch-sd/bramble/api/v1alpha1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -120,16 +121,16 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 		}
 	}
 
-	exePods, err := getExecutionPods(listOptions, reconciler, ctx)
+	exeJobs, err := getExecutionJobs(listOptions, reconciler, ctx)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
 	// Check if the repo is cloned before proceeding
 	if !execution.Status.RepoCloned {
-		for _, pod := range exePods.Items {
-			if pod.ObjectMeta.Name == execution.ObjectMeta.Name+"-cloner" {
-				execution.Status.RepoCloned = pod.Status.Phase == corev1.PodSucceeded
+		for _, job := range exeJobs.Items {
+			if job.ObjectMeta.Name == execution.ObjectMeta.Name+"-cloner" {
+				execution.Status.RepoCloned = job.Status.Succeeded == 1
 				if execution.Status.RepoCloned {
 					logger.Info(fmt.Sprintf("Execution: %v repo cloned", execution.ObjectMeta.Name))
 				}
@@ -153,7 +154,7 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 			visited,
 			pipeline,
 			execution,
-			exePods,
+			exeJobs,
 			pvc,
 		)
 		if err != nil {
@@ -222,18 +223,18 @@ func generateListOptions(execution *pipelinesv1alpha1.Execution) *client.ListOpt
 	}
 }
 
-func getExecutionPods(
+func getExecutionJobs(
 	listOptions *client.ListOptions,
 	reconciler *ExecutionReconciler,
 	ctx context.Context,
-) (*corev1.PodList, error) {
-	exePods := &corev1.PodList{}
+) (*batchv1.JobList, error) {
+	jobs := &batchv1.JobList{}
 
-	err := reconciler.Client.List(ctx, exePods, listOptions)
+	err := reconciler.Client.List(ctx, jobs, listOptions)
 	if err != nil {
 		return nil, err
 	}
-	return exePods, nil
+	return jobs, nil
 }
 
 func getExecutionPvcs(

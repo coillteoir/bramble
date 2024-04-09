@@ -1,0 +1,19 @@
+apiVersion: skaffold/v4beta8
+kind: Config
+metadata:
+  name: operator
+build:
+  artifacts:
+    - image: davidlynchsd/bramble-operator
+      docker:
+        dockerfile: Dockerfile
+manifests:
+  kustomize:
+    paths:
+      - config/default
+profiles:
+  - name: default
+    manifests:
+      kustomize:
+        paths:
+          - config/default

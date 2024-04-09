@@ -22,6 +22,7 @@ import (
 	"slices"
 
 	pipelinesv1alpha1 "github.com/davidlynch-sd/bramble/api/v1alpha1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -51,34 +52,34 @@ func validateTask(
 	start int,
 	pipeline *pipelinesv1alpha1.Pipeline,
 	execution *pipelinesv1alpha1.Execution,
-	podList *corev1.PodList,
+	jobList *batchv1.JobList,
 ) (bool, error) {
 	logger := log.Log.WithName(fmt.Sprintf("Execution: %v", execution.ObjectMeta.Name))
 
 	task := pipeline.Spec.Tasks[start]
 
-	for _, pod := range podList.Items {
-		if pod.ObjectMeta.Labels["bramble-task"] == task.Name {
+	for _, job := range jobList.Items {
+		if job.ObjectMeta.Labels["bramble-task"] == task.Name {
 			baseStr := fmt.Sprintf("Execution: %v Task: %v", execution.ObjectMeta.Name, task.Name)
 
-			logger.Info(fmt.Sprintf("%v %v", baseStr, pod.Status.Phase))
-
-			switch pod.Status.Phase {
-			case corev1.PodRunning, corev1.PodPending:
+			logger.Info(fmt.Sprintf("%v %v", baseStr, job.Status.Succeeded))
+			// TODO rework switch statement to work with jobs
+			switch job.Status.Succeeded {
+			case 0:
 				return false, nil
 
-			case corev1.PodSucceeded:
+			case 1:
 				if start == 0 {
 					execution.Status.Phase = pipelinesv1alpha1.ExecutionCompleted
 					return false, nil
 				}
 				return false, nil
 
-			case corev1.PodFailed:
-				return false, fmt.Errorf("pod: %v failed", pod.ObjectMeta.Name)
+			case 2:
+				return false, fmt.Errorf("pod: %v failed", job.ObjectMeta.Name)
 
 			default:
-				logger.Info(fmt.Sprintf("%v %v Pod created but Phase undefined", baseStr, pod.Status.Phase))
+				logger.Info(fmt.Sprintf("%v %v Pod created but Phase undefined", baseStr, job.Status.Succeeded))
 				return false, nil
 			}
 		}
@@ -90,10 +91,10 @@ func validateTask(
 	count := len(task.Spec.Dependencies)
 
 	for _, dep := range task.Spec.Dependencies {
-		for _, pod := range podList.Items {
-			if pod.ObjectMeta.Labels["bramble-execution"] == execution.ObjectMeta.Name &&
-				pod.ObjectMeta.Labels["bramble-task"] == dep &&
-				pod.Status.Phase == corev1.PodSucceeded {
+		for _, job := range jobList.Items {
+			if job.ObjectMeta.Labels["bramble-execution"] == execution.ObjectMeta.Name &&
+				job.ObjectMeta.Labels["bramble-task"] == dep &&
+				job.Status.Succeeded == 1 {
 				count--
 			}
 		}
@@ -111,30 +112,28 @@ func validateTask(
 	return count == 0, nil
 }
 
-// I think creating a custom struct to handle execution task logic would be the move
-// This function will have 10 args by the time it's finished.
 func executeUsingDfs(
 	matrix [][]int,
 	start int,
 	visited []bool,
 	pipeline *pipelinesv1alpha1.Pipeline,
 	execution *pipelinesv1alpha1.Execution,
-	podList *corev1.PodList,
+	jobList *batchv1.JobList,
 	pvc *corev1.PersistentVolumeClaim,
-) ([]*corev1.Pod, error) {
+) ([]*batchv1.Job, error) {
 	logger := log.Log.WithName(fmt.Sprintf("Execution: %v", execution.ObjectMeta.Name))
 
 	visited[start] = true
 
 	task := pipeline.Spec.Tasks[start]
 
-	podsToExecute := make([]*corev1.Pod, 0)
+	jobs := make([]*batchv1.Job, 0)
 
 	toRun, err := validateTask(
 		start,
 		pipeline,
 		execution,
-		podList,
+		jobList,
 	)
 	if err != nil {
 		return nil, err
@@ -143,48 +142,48 @@ func executeUsingDfs(
 	if toRun {
 		logger.Info(fmt.Sprintf("Executing task: %v", task.Name))
 
-		pod, err := generateTaskPod(execution, &task, pvc)
+		job, err := generateTaskPod(execution, &task, pvc)
 		if err != nil {
 			return nil, err
 		}
 
-		podsToExecute = append(podsToExecute, pod)
+		jobs = append(jobs, job)
 		execution.Status.Running = append(execution.Status.Running, task.Name)
-		return podsToExecute, nil
+		return jobs, nil
 	}
 
 	for i, node := range matrix[start] {
 		if node == 1 && !visited[i] {
 
-			downstreamPods, err := executeUsingDfs(
+			downstreamJobs, err := executeUsingDfs(
 				matrix,
 				i,
 				visited,
 				pipeline,
 				execution,
-				podList,
+				jobList,
 				pvc,
 			)
 			if err != nil {
 				return nil, err
 			}
 
-			podsToExecute = append(podsToExecute, downstreamPods...)
+			jobs = append(jobs, downstreamJobs...)
 		}
 	}
-	return podsToExecute, nil
+	return jobs, nil
 }
 
 func generateTaskPod(
 	execution *pipelinesv1alpha1.Execution,
 	task *pipelinesv1alpha1.PLTask,
 	pvc *corev1.PersistentVolumeClaim,
-) (*corev1.Pod, error) {
+) (*batchv1.Job, error) {
 	if pvc == nil {
 		return nil, fmt.Errorf("NO PVC for pod")
 	}
 
-	pod := &corev1.Pod{
+	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: execution.ObjectMeta.Name + "-" + task.Name + "-",
 			Namespace:    execution.ObjectMeta.Namespace,
@@ -192,28 +191,31 @@ func generateTaskPod(
 				"bramble-execution": execution.ObjectMeta.Name,
 				"bramble-task":      task.Name,
 			},
-		}, Spec: corev1.PodSpec{
-			RestartPolicy: corev1.RestartPolicyNever,
-			Containers: []corev1.Container{
-				{
-					Name:    task.Name,
-					Image:   task.Spec.Image,
-					Command: task.Spec.Command,
-					VolumeMounts: []corev1.VolumeMount{
+		}, Spec: batchv1.JobSpec{
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
 						{
-							Name:      sourceVolumeName,
-							MountPath: sourceRoot,
+							Name:    task.Name,
+							Image:   task.Spec.Image,
+							Command: task.Spec.Command,
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      sourceVolumeName,
+									MountPath: sourceRoot,
+								},
+							},
+							WorkingDir: filepath.Join(sourceRoot, execution.ObjectMeta.Name, task.Spec.Workdir),
 						},
 					},
-					WorkingDir: filepath.Join(sourceRoot, execution.ObjectMeta.Name, task.Spec.Workdir),
-				},
-			},
-			Volumes: []corev1.Volume{
-				{
-					Name: sourceVolumeName,
-					VolumeSource: corev1.VolumeSource{
-						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-							ClaimName: pvc.ObjectMeta.Name,
+					Volumes: []corev1.Volume{
+						{
+							Name: sourceVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+									ClaimName: pvc.ObjectMeta.Name,
+								},
+							},
 						},
 					},
 				},
@@ -221,5 +223,5 @@ func generateTaskPod(
 		},
 	}
 
-	return pod, nil
+	return job, nil
 }
