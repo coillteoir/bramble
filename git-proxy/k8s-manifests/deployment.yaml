@@ -18,16 +18,17 @@ spec:
       labels:
         app: bramble-git-proxy
     spec:
+      serviceAccountName: git-proxy
       containers:
       - image: davidlynchsd/bramble-git-proxy
         name: bramble-git-proxy
         args: ["-c", "/config/config.yaml"]
-        env:
-          - name: "IN_CLUSTER"
-            value: "TRUE"
         volumeMounts:
         - name: config
           mountPath: "/config"
+        ports:
+        - containerPort: 9999
+          protocol: TCP
       volumes:
       - name: config
         configMap:
