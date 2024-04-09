@@ -20,6 +20,7 @@ import (
 	"context"
 
 	pipelinesv1alpha1 "github.com/davidlynch-sd/bramble/api/v1alpha1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -28,27 +29,27 @@ import (
 )
 
 func teardownExecution(ctx context.Context, reconciler *ExecutionReconciler, execution *pipelinesv1alpha1.Execution) error {
-	exePods := &corev1.PodList{}
+	exeJobs := &batchv1.JobList{}
 
-	podSelector := metav1.LabelSelector{
+	executionSelector := metav1.LabelSelector{
 		MatchLabels: map[string]string{
 			"bramble-execution": execution.ObjectMeta.Name,
 		},
 	}
 
-	podListOptions := &client.ListOptions{
+	jobListOptions := &client.ListOptions{
 		LabelSelector: labels.SelectorFromSet(
-			labels.Set(podSelector.MatchLabels),
+			labels.Set(executionSelector.MatchLabels),
 		),
 	}
 
-	err := reconciler.Client.List(ctx, exePods, podListOptions)
+	err := reconciler.Client.List(ctx, exeJobs, jobListOptions)
 	if err != nil {
 		return err
 	}
 
-	for i := range exePods.Items {
-		err = reconciler.Client.Delete(ctx, &exePods.Items[i])
+	for i := range exeJobs.Items {
+		err = reconciler.Client.Delete(ctx, &exeJobs.Items[i])
 		if err != nil {
 			return err
 		}

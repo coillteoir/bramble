@@ -12,7 +12,7 @@ sleep $SLEEPTIME
 
 for execution in $(kubectl -n testns get executions -o jsonpath="{.items[*].metadata.name}"); do
     echo RUNNING TEST: "$execution"
-    podcount="$(kubectl -n testns get po \
+    jobcount="$(kubectl -n testns get jobs \
     -l=bramble-execution="$execution" \
     -o jsonpath='{.items}' | jq length)"
 
@@ -20,9 +20,9 @@ for execution in $(kubectl -n testns get executions -o jsonpath="{.items[*].meta
         "$(kubectl -n testns get execution "$execution" -o jsonpath="{.spec.pipeline}")"\
         -o jsonpath="{.spec.tasks}" | jq length)"
 
-    if [ "$(echo "$podcount" | wc -w)" -eq "$taskcount" ]
-        then echo Correct amount of pods have been created in "$execution".
-        else echo Incorrect amount of pods created in "$execution". && FAIL=1
+    if [ "$(echo "$jobcount" | wc -w)" -eq "$taskcount" ]
+        then echo Correct amount of jobs have been created in "$execution".
+        else echo Incorrect amount of jobs created in "$execution". && FAIL=1
     fi
 done
 

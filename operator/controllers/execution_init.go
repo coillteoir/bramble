@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 
 	pipelinesv1alpha1 "github.com/davidlynch-sd/bramble/api/v1alpha1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -102,41 +103,45 @@ func initExecution(
 	}
 
 	if !execution.Status.RepoCloned {
-		clonePod := &corev1.Pod{
+		cloneJob := &batchv1.Job{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      fmt.Sprintf("%v-cloner", execution.ObjectMeta.Name),
 				Namespace: execution.ObjectMeta.Namespace,
 				Labels:    map[string]string{"bramble-execution": execution.ObjectMeta.Name},
-			}, Spec: corev1.PodSpec{
-				RestartPolicy: corev1.RestartPolicyOnFailure,
-				Containers: []corev1.Container{
-					{
-						Name:  "cloner",
-						Image: "alpine/git",
-						Command: []string{
-							"sh", "-c",
-							fmt.Sprintf("rm -rf %v && git clone %v --branch=%v %v",
-								execution.ObjectMeta.Name,
-								execution.Spec.Repo,
-								execution.Spec.Branch,
-								execution.ObjectMeta.Name,
-							),
-						},
-						VolumeMounts: []corev1.VolumeMount{
+			}, Spec: batchv1.JobSpec{
+				Template: corev1.PodTemplateSpec{
+					Spec: corev1.PodSpec{
+						RestartPolicy: corev1.RestartPolicyOnFailure,
+						Containers: []corev1.Container{
 							{
-								Name:      "cloner-volume",
-								MountPath: executionSourcePath,
+								Name:  "cloner",
+								Image: "alpine/git",
+								Command: []string{
+									"sh", "-c",
+									fmt.Sprintf("rm -rf %v && git clone %v --branch=%v %v",
+										execution.ObjectMeta.Name,
+										execution.Spec.Repo,
+										execution.Spec.Branch,
+										execution.ObjectMeta.Name,
+									),
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      "cloner-volume",
+										MountPath: executionSourcePath,
+									},
+								},
+								WorkingDir: executionSourcePath,
 							},
 						},
-						WorkingDir: executionSourcePath,
-					},
-				},
-				Volumes: []corev1.Volume{
-					{
-						Name: "cloner-volume",
-						VolumeSource: corev1.VolumeSource{
-							PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-								ClaimName: pvc.ObjectMeta.Name,
+						Volumes: []corev1.Volume{
+							{
+								Name: "cloner-volume",
+								VolumeSource: corev1.VolumeSource{
+									PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+										ClaimName: pvc.ObjectMeta.Name,
+									},
+								},
 							},
 						},
 					},
@@ -144,7 +149,7 @@ func initExecution(
 			},
 		}
 
-		err := r.Create(ctx, clonePod)
+		err := r.Create(ctx, cloneJob)
 		if err != nil {
 			return err
 		}
