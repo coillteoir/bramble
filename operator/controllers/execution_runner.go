@@ -61,26 +61,22 @@ func validateTask(
 	for _, job := range jobList.Items {
 		if job.ObjectMeta.Labels["bramble-task"] == task.Name {
 			baseStr := fmt.Sprintf("Execution: %v Task: %v", execution.ObjectMeta.Name, task.Name)
-
+			// Job Completed
+			// Job Error
+			// Job Running
 			logger.Info(fmt.Sprintf("%v %v", baseStr, job.Status.Succeeded))
-			// TODO rework switch statement to work with jobs
-			switch job.Status.Succeeded {
-			case 0:
-				return false, nil
-
-			case 1:
+			if job.Status.Succeeded != 0 {
 				if start == 0 {
 					execution.Status.Phase = pipelinesv1alpha1.ExecutionCompleted
 					return false, nil
 				}
 				return false, nil
-
-			case 2:
-				return false, fmt.Errorf("pod: %v failed", job.ObjectMeta.Name)
-
-			default:
-				logger.Info(fmt.Sprintf("%v %v Pod created but Phase undefined", baseStr, job.Status.Succeeded))
+			}
+			if job.Status.Active != 0 {
 				return false, nil
+			}
+			if job.Status.Failed != 0 {
+				return false, fmt.Errorf("job: %v failed", job.ObjectMeta.Name)
 			}
 		}
 	}
@@ -120,14 +116,14 @@ func executeUsingDfs(
 	execution *pipelinesv1alpha1.Execution,
 	jobList *batchv1.JobList,
 	pvc *corev1.PersistentVolumeClaim,
-) ([]*batchv1.Job, error) {
+) (*batchv1.JobList, error) {
 	logger := log.Log.WithName(fmt.Sprintf("Execution: %v", execution.ObjectMeta.Name))
 
 	visited[start] = true
 
 	task := pipeline.Spec.Tasks[start]
 
-	jobs := make([]*batchv1.Job, 0)
+	jobs := &batchv1.JobList{}
 
 	toRun, err := validateTask(
 		start,
@@ -147,7 +143,7 @@ func executeUsingDfs(
 			return nil, err
 		}
 
-		jobs = append(jobs, job)
+		jobs.Items = append(jobs.Items, *job)
 		execution.Status.Running = append(execution.Status.Running, task.Name)
 		return jobs, nil
 	}
@@ -168,7 +164,7 @@ func executeUsingDfs(
 				return nil, err
 			}
 
-			jobs = append(jobs, downstreamJobs...)
+			jobs.Items = append(jobs.Items, downstreamJobs.Items...)
 		}
 	}
 	return jobs, nil
@@ -192,9 +188,12 @@ func generateTaskPod(
 				"bramble-task":      task.Name,
 			},
 		}, Spec: batchv1.JobSpec{
+			// TODO USE JOB START TIME TO SHOW TIME RUNNING IN UI
+			Completions:  (func(num int32) *int32 { return &num }(1)),
+			BackoffLimit: (func(num int32) *int32 { return &num }(1)),
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
-					RestartPolicy: corev1.RestartPolicyOnFailure,
+					RestartPolicy: corev1.RestartPolicyNever,
 					Containers: []corev1.Container{
 						{
 							Name:    task.Name,
@@ -206,7 +205,8 @@ func generateTaskPod(
 									MountPath: sourceRoot,
 								},
 							},
-							WorkingDir: filepath.Join(sourceRoot, execution.ObjectMeta.Name, task.Spec.Workdir),
+							WorkingDir:      filepath.Join(sourceRoot, execution.ObjectMeta.Name, task.Spec.Workdir),
+							ImagePullPolicy: corev1.PullIfNotPresent,
 						},
 					},
 					Volumes: []corev1.Volume{

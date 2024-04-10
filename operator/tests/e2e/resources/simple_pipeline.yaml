@@ -9,4 +9,4 @@ spec:
       spec:
         image: ubuntu
         command:
-        - pwd
+          - pwd

@@ -3,7 +3,7 @@
 set -e
 
 FAIL=0
-SLEEPTIME=100
+SLEEPTIME=300
 
 kubectl apply -k tests/e2e/resources/
 

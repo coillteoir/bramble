@@ -1,0 +1,66 @@
+apiVersion: pipelines.bramble.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: dirtest
+  namespace: testns
+spec:
+  tasks:
+    - name: manifests
+      spec:
+        image: bitnami/kubectl
+        command: ["kubectl", "apply", "-k", "."]
+        dependencies:
+        - image-cli
+        - image-operator
+        - image-git-proxy
+    - name: image-cli
+      spec:
+        image: gcr.io/kaniko-project/executor:latest
+        command: [
+          "/kaniko/executor", 
+          "--ignore-path=dir://project_uuid",
+          "--dockerfile=./Dockerfile", 
+          "--no-push",
+          "--context=."]
+        workdir: cli
+        dependencies:
+        - cli-vet
+    - name: image-git-proxy
+      spec: 
+        image: gcr.io/kaniko-project/executor:latest
+        command: [
+          "/kaniko/executor", 
+          "--ignore-path=dir://project_uuid",
+          "--dockerfile=./Dockerfile", 
+          "--no-push",
+          "--context=."]
+        workdir: git-proxy
+        dependencies: 
+        - git-proxy-vet
+    - name: image-operator
+      spec:
+        image: gcr.io/kaniko-project/executor:latest
+        command: [
+          "/kaniko/executor", 
+          "--ignore-path=dir://project_uuid",
+          "--dockerfile=./Dockerfile", 
+          "--no-push",
+          "--context=."]
+        workdir: operator
+        dependencies:
+        - operator-vet
+    - name: operator-vet
+      spec:
+        image: golang
+        command: ["go", "vet", "."]
+        workdir: operator
+    - name: git-proxy-vet
+      spec:
+        image: golang
+        command: ["go", "vet", "."]
+        workdir: git-proxy
+    - name: cli-vet
+      spec:
+        image: golang
+        command: ["go", "vet", "."]
+        workdir: cli

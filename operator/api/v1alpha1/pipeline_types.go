@@ -28,7 +28,6 @@ type TaskRef struct {
 	Dependencies []string `json:"dependencies,omitempty"`
 }
 type TaskSpec struct {
-
 	// Docker image which will be used.
 	Image string `json:"image"`
 

@@ -45,6 +45,7 @@ type ExecutionReconciler struct {
 //+kubebuilder:rbac:groups=pipelines.bramble.dev,resources=executions/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=pipelines.bramble.dev,resources=executions/finalizers,verbs=update
 //+kubebuilder:rbac:groups="",resources=pods;persistentvolumes;persistentvolumeclaims,verbs=create;delete;list;get
+//+kubebuilder:rbac:groups="batch",resources=jobs,verbs=create;delete;list;get;watch
 
 const (
 	executionFinalizer = "executions.pipelines.bramble.dev/finalizer"
@@ -97,6 +98,10 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 	for _, pv := range pvList.Items {
 		if pv.ObjectMeta.Name == fmt.Sprintf("%v-pv", execution.ObjectMeta.Name) {
 			execution.Status.VolumeProvisioned = (pv.Status.Phase == corev1.VolumeBound || pv.Status.Phase == corev1.VolumeAvailable)
+			err = reconciler.Status().Update(ctx, execution)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
 		}
 	}
 
@@ -148,7 +153,7 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 		logger.Info(fmt.Sprintf("MATRIX: %v", matrix))
 
 		visited := make([]bool, len(matrix))
-		podsToExecute, err := executeUsingDfs(
+		jobsToExecute, err := executeUsingDfs(
 			matrix,
 			0,
 			visited,
@@ -162,8 +167,8 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 			return ctrl.Result{}, err
 		}
 
-		for _, pod := range podsToExecute {
-			err = reconciler.Client.Create(ctx, pod)
+		for _, job := range jobsToExecute.Items {
+			err = reconciler.Client.Create(ctx, &job)
 			if err != nil {
 				return ctrl.Result{}, err
 			}
