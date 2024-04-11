@@ -1,6 +1,4 @@
 resources:
   - deployment.yaml
-  - pipeline_viewer_role.yaml
-  - pod_viewer_role.yaml
-  - serviceaccount.yaml
-  - crb.yaml
+  - rbac
+

@@ -1,15 +1,28 @@
 import { pipelinesBrambleDev } from "./bramble-types";
-
+import {getLogger} from "log4js"
 const k8s = require("@kubernetes/client-node");
+
+const logger = getLogger()
+logger.level = "info"
 
 const kc = new k8s.KubeConfig();
 
-if (process.env.IN_CLUSTER === "1") {
-  kc.loadFromCluster();
-  console.log("Connecting to cluster from within");
+if (process.env.KUBERNETES_SERVICE_HOST !== "") {
+  logger.info("Connecting to cluster from within");
+  try {
+    kc.loadFromCluster();
+  } catch (err: any) {
+    logger.error(err);
+  }
+  logger.info("CONNECTED!");
 } else {
-  kc.loadFromDefault();
-  console.log("Connecting to cluster via kubeconfig");
+  logger.info("Connecting to cluster via kubeconfig");
+  try {
+    kc.loadFromDefault();
+  } catch (err: any) {
+    logger.error(err);
+  }
+  logger.info("CONNECTED!");
 }
 
 const k8sCRDApi = kc.makeApiClient(k8s.CustomObjectsApi);
@@ -19,8 +32,10 @@ export const getPods = async (namespace: string) => {
   try {
     const response = await k8sCoreApi.listNamespacedPod(namespace);
     return response?.body?.items;
-  } catch (err) {
-    console.error(err);
+  } catch (err: any) {
+    const ret = new Error(err.message);
+    logger.error(ret);
+    throw ret;
   }
 };
 
@@ -41,6 +56,7 @@ export const getPipelines = async (
     return pipelines;
   } catch (err: any) {
     const ret = new Error(err.message);
+    logger.error(ret);
     throw ret;
   }
 };
@@ -63,6 +79,7 @@ export const getExecutions = async (
     return executions;
   } catch (err: any) {
     const ret = new Error(err.message);
+    logger.error(ret);
     throw ret;
   }
 };

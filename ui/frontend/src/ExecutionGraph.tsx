@@ -11,7 +11,7 @@ export const generateNodes = (
             dependencies?: string[] | undefined;
         };
     }[],
-    pods: Pod[],
+    pods: Pod[] | undefined,
     execution: pipelinesBrambleDev.v1alpha1.Execution | undefined
 ): Node[] =>
     tasks.map(
@@ -26,27 +26,61 @@ export const generateNodes = (
             // get pod of current task
             const taskPod: Pod | undefined =
                 execution &&
-                pods.find(
+                pods?.find(
                     (pod: Pod) =>
                         execution.metadata?.name ===
                             pod.metadata?.labels?.["bramble-execution"] &&
                         pod.metadata?.labels?.["bramble-task"] === task.name
                 );
-            const colour =
+            const spinner =
                 execution &&
                 (() => {
                     if (taskPod === undefined) {
-                        return "orange";
+                        return (
+                            <span className="loading loading-dots loading-sm"></span>
+                        );
                     }
                     switch (taskPod.status?.phase) {
                         case "Succeeded":
-                            return "green";
+                            return (
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="size-6 shrink-0 stroke-current"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    />
+                                </svg>
+                            );
                         case "Running":
-                            return "blue";
+                            return (
+                                <span className="loading loading-spinner loading-sm text-blue-800" />
+                            );
                         case "Failed":
-                            return "red";
+                            return (
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="size-6 shrink-0 stroke-current"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    />
+                                </svg>
+                            );
                     }
-                    return "orange";
+                    return (
+                        <span className="loading loading-dots loading-sm"></span>
+                    );
                 })();
 
             return {
@@ -56,20 +90,20 @@ export const generateNodes = (
                 position: { x: 0, y: 0 },
                 data: {
                     label: (
-                        <div>
-                            <p>{task.name}</p>
-                            {colour && (
-                                <svg
-                                    viewBox="0 0 2 2"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    style={{
-                                        width: "20%",
-                                        height: "20%",
-                                    }}
-                                >
-                                    <circle cx="1" cy="1" r="1" fill={colour} />
-                                </svg>
+                        <div className="group">
+                            <p className="">{task.name}</p>
+                            <p className="hidden group-hover:block">
+                                Image: {task.spec.image}
+                            </p>
+                            <p className="hidden group-hover:block">
+                                Command: {task.spec.command}
+                            </p>
+                            {task.spec.dependencies && (
+                                <p className="hidden group-hover:block">
+                                    Dependencies: {task.spec.dependencies}
+                                </p>
                             )}
+                            {spinner}
                         </div>
                     ),
                 },

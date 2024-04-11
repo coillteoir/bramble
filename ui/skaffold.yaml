@@ -1,0 +1,19 @@
+apiVersion: skaffold/v4beta8
+kind: Config
+metadata:
+  name: ui
+build:
+  artifacts:
+    - image: davidlynchsd/bramble-ui
+      docker:
+        dockerfile: Dockerfile
+manifests:
+  kustomize:
+    paths:
+      - k8s-manifests
+portForward:
+- resourceType: deployment
+  resourceName: bramble-ui
+  namespace: bramble
+  port: 5555
+  localPort: 5555 # *Optional*
