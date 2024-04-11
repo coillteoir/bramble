@@ -90,8 +90,19 @@ export const generateNodes = (
                 position: { x: 0, y: 0 },
                 data: {
                     label: (
-                        <div>
-                            <p>{task.name}</p>
+                        <div className="group">
+                            <p className="">{task.name}</p>
+                            <p className="hidden group-hover:block">
+                                Image: {task.spec.image}
+                            </p>
+                            <p className="hidden group-hover:block">
+                                Command: {task.spec.command}
+                            </p>
+                            {task.spec.dependencies && (
+                                <p className="hidden group-hover:block">
+                                    Dependencies: {task.spec.dependencies}
+                                </p>
+                            )}
                             {spinner}
                         </div>
                     ),
