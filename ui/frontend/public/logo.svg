@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="5000" height="5000">
+    <circle cx="2500" cy="2500" r="2500" fill="#32a838"/>
+    <path d="M2500 500v3000M1000 2000v1500m0-1500h3000m0 0H2500m1500 1500V2000" style="stroke:#000;stroke-width:4"/>
+    <circle cx="2500" cy="500" r="250"  fill="white" stroke="green" stroke-width="4"/>
+    <circle cx="1000" cy="3500" r="250" fill="white" stroke="green" stroke-width="4"/>
+    <circle cx="2500" cy="3500" r="250" fill="white" stroke="green" stroke-width="4"/>
+    <circle cx="4000" cy="3500" r="250" fill="white" stroke="green" stroke-width="4"/>
+</svg>

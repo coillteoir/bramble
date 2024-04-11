@@ -9,6 +9,7 @@ import "./index.css";
 
 const NamespaceSearch = (props: {
     inputRef: React.RefObject<HTMLInputElement>;
+    fetchNamespacedResources: () => Promise<void>;
     setNamespace: React.Dispatch<React.SetStateAction<string>>;
 }): React.ReactNode => (
     <div className="">
@@ -23,10 +24,11 @@ const NamespaceSearch = (props: {
             className="btn btn-primary w-2/5"
             onClick={() => {
                 const ns: string | undefined = props.inputRef.current?.value;
-                console.log(ns);
-                if (ns !== undefined && ns !== "") {
+                if (ns) {
                     props.setNamespace(ns);
+                    return;
                 }
+                props.fetchNamespacedResources();
             }}
         >
             Get pipelines
@@ -35,7 +37,7 @@ const NamespaceSearch = (props: {
 );
 
 const App = (): React.ReactNode => {
-    const [namespace, setNamespace] = useState<string>("default");
+    const [namespace, setNamespace] = useState<string>("testns");
 
     const [focusedPipeline, setFocusedPipeline] = useState<number>(0);
     const [focusedExecution, setFocusedExecution] = useState<
@@ -97,7 +99,8 @@ const App = (): React.ReactNode => {
 
     return (
         <>
-            <header className="">
+            <header className="flex">
+                <img className="size-10" src="/logo.svg" />
                 <h1 className="bg-slate-800 text-3xl font-bold">Bramble</h1>
             </header>
             <div className="flex h-full border-2 border-yellow-200">
@@ -105,6 +108,7 @@ const App = (): React.ReactNode => {
                     <NamespaceSearch
                         inputRef={inputRef}
                         setNamespace={setNamespace}
+                        fetchNamespacedResources={fetchNamespacedResources}
                     />
 
                     <PipelineList

@@ -9,5 +9,5 @@ roleRef:
   name: ui-podviewer
 subjects:
   - kind: ServiceAccount
-    name: ui-sa
+    name: ui
     namespace: bramble
