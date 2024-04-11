@@ -25,7 +25,8 @@ const NamespaceSearch = (props: {
                 const ns: string | undefined = props.inputRef.current?.value;
                 console.log(ns);
                 if (ns !== undefined && ns !== "") {
-                    props.setNamespace(ns);
+                    console.log("NAMESPACE SET TO:", props.setNamespace(ns));
+                    return;
                 }
             }}
         >
@@ -97,7 +98,8 @@ const App = (): React.ReactNode => {
 
     return (
         <>
-            <header className="">
+            <header className="flex">
+                <img className="size-10" src="/logo.svg" />
                 <h1 className="bg-slate-800 text-3xl font-bold">Bramble</h1>
             </header>
             <div className="flex h-full border-2 border-yellow-200">

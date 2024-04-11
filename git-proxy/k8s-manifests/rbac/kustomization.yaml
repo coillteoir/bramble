@@ -1,0 +1,5 @@
+resources:
+- execution_editor_role.yaml
+- role_binding.yaml
+- role.yaml
+- service_account.yaml

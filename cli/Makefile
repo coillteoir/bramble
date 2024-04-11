@@ -22,5 +22,8 @@ vet:
 	gofumpt -w **/*.go
 	go vet ./...
 
+test: build
+	sh tests/init_test.sh
+
 lint: vet
 	golangci-lint run

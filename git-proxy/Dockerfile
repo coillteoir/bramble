@@ -14,6 +14,8 @@ RUN go mod download
 # Copy the go source
 COPY main.go main.go
 COPY cmd cmd
+COPY util util
+COPY v1alpha1 v1alpha1
 
 # Build
 RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o bramble-git-proxy main.go

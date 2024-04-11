@@ -11,7 +11,7 @@ export const generateNodes = (
             dependencies?: string[] | undefined;
         };
     }[],
-    pods: Pod[],
+    pods: Pod[] | undefined,
     execution: pipelinesBrambleDev.v1alpha1.Execution | undefined
 ): Node[] =>
     tasks.map(
@@ -26,7 +26,7 @@ export const generateNodes = (
             // get pod of current task
             const taskPod: Pod | undefined =
                 execution &&
-                pods.find(
+                pods?.find(
                     (pod: Pod) =>
                         execution.metadata?.name ===
                             pod.metadata?.labels?.["bramble-execution"] &&
