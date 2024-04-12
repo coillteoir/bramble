@@ -32,4 +32,4 @@ crd-sync:
 	make -C operator manifests
 	npx @kubernetes-models/crd-generate --input operator/config/crd/bases/* --output ui/frontend/src/bramble-types
 	npx @kubernetes-models/crd-generate --input operator/config/crd/bases/* --output ui/backend/src/bramble-types
-	cp operator/api/v1alpha1/execution_types.go git-proxy/v1alpha1/execution_types.go
+	head -n -3 operator/api/v1alpha1/execution_types.go > git-proxy/v1alpha1/execution_types.go

@@ -2,11 +2,13 @@ import { Node, Edge } from "reactflow";
 import { Job } from "kubernetes-models/batch/v1";
 import { pipelinesBrambleDev } from "./bramble-types";
 
+import Execution = pipelinesBrambleDev.v1alpha1.Execution;
+
 const jobStatusIcon = (job: Job | undefined) => {
     if (job === undefined) {
         return <span className="loading loading-dots loading-sm"></span>;
     }
-    if (job.status?.succeeded !== 0) {
+    if (job.status?.succeeded) {
         return (
             <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -23,12 +25,7 @@ const jobStatusIcon = (job: Job | undefined) => {
             </svg>
         );
     }
-    if (job.status?.active !== 0) {
-        return (
-            <span className="loading loading-spinner loading-sm text-blue-800" />
-        );
-    }
-    if (job.status.failed !== 0) {
+    if (job.status?.failed) {
         return (
             <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -45,6 +42,11 @@ const jobStatusIcon = (job: Job | undefined) => {
             </svg>
         );
     }
+    if (job.status?.active) {
+        return (
+            <span className="loading loading-spinner loading-sm text-blue-800" />
+        );
+    }
 };
 
 export const generateNodes = (
@@ -54,10 +56,12 @@ export const generateNodes = (
             image: string;
             command: string[];
             dependencies?: string[] | undefined;
+            workDir?: string | undefined;
         };
     }[],
     jobs: Job[] | undefined,
-    execution: pipelinesBrambleDev.v1alpha1.Execution | undefined
+    execution: Execution | undefined,
+    taskSetter: any
 ): Node[] =>
     tasks.map(
         (task: {
@@ -86,19 +90,11 @@ export const generateNodes = (
                 position: { x: 0, y: 0 },
                 data: {
                     label: (
-                        <div className="group">
+                        <div
+                            className="group"
+                            onClick={() => taskSetter(task.name)}
+                        >
                             <p className="">{task.name}</p>
-                            <p className="hidden group-hover:block">
-                                Image: {task.spec.image}
-                            </p>
-                            <p className="hidden group-hover:block">
-                                Command: {task.spec.command}
-                            </p>
-                            {task.spec.dependencies && (
-                                <p className="hidden group-hover:block">
-                                    Dependencies: {task.spec.dependencies}
-                                </p>
-                            )}
                             {spinner}
                         </div>
                     ),

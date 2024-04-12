@@ -150,7 +150,6 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 		execution.Status.RepoCloned && execution.Status.Phase != pipelinesv1alpha1.ExecutionCompleted {
 
 		matrix := generateAssociationMatrix(pipeline)
-		logger.Info(fmt.Sprintf("MATRIX: %v", matrix))
 
 		visited := make([]bool, len(matrix))
 		jobsToExecute, err := executeUsingDfs(

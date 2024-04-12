@@ -7,7 +7,7 @@ logger.level = "info";
 
 const kc = new k8s.KubeConfig();
 
-if (process.env.KUBERNETES_SERVICE_HOST !== "") {
+if (process.env.KUBERNETES_SERVICE_HOST) {
   logger.info("Connecting to cluster from within");
   try {
     kc.loadFromCluster();

@@ -1,7 +1,7 @@
 apiVersion: pipelines.bramble.dev/v1alpha1
 kind: Pipeline
 metadata:
-  name: dirtest
+  name: bramble
   namespace: testns
 spec:
   tasks:
@@ -46,6 +46,13 @@ spec:
           "--dockerfile=./Dockerfile", 
           "--no-push",
           "--context=."]
+        workdir: operator
+        dependencies:
+        - operator-test
+    - name: operator-test
+      spec:
+        image: golang
+        command: ["go", "test", "./..."]
         workdir: operator
         dependencies:
         - operator-vet
