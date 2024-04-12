@@ -1,12 +1,12 @@
 import express, { Express, Request, Response } from "express";
 import cors from "cors";
-import { getPipelines, getExecutions, getPods } from "./query_cluster";
-import {getLogger} from "log4js"
+import { getPipelines, getExecutions, getJobs } from "./query_cluster";
+import { getLogger } from "log4js";
 const app: Express = express();
 
 const port: number = process.env.PORT ? parseInt(process.env.PORT) : NaN;
-const logger = getLogger()
-logger.level= "info"
+const logger = getLogger();
+logger.level = "info";
 
 app.use(cors());
 app.use(express.json());
@@ -18,9 +18,9 @@ app.get(
     logger.info(`querying ${req.params.resource} in ${req.params.namespace}`);
     try {
       switch (req.params.resource) {
-        case "pods": {
-          const pods = await getPods(req.params.namespace);
-          res.json(pods);
+        case "jobs": {
+          const jobs = await getJobs(req.params.namespace);
+          res.json(jobs);
           break;
         }
         case "pipelines": {

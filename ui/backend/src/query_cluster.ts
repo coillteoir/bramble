@@ -1,9 +1,9 @@
 import { pipelinesBrambleDev } from "./bramble-types";
-import {getLogger} from "log4js"
+import { getLogger } from "log4js";
 const k8s = require("@kubernetes/client-node");
 
-const logger = getLogger()
-logger.level = "info"
+const logger = getLogger();
+logger.level = "info";
 
 const kc = new k8s.KubeConfig();
 
@@ -26,11 +26,11 @@ if (process.env.KUBERNETES_SERVICE_HOST !== "") {
 }
 
 const k8sCRDApi = kc.makeApiClient(k8s.CustomObjectsApi);
-const k8sCoreApi = kc.makeApiClient(k8s.CoreV1Api);
+const k8sBatchApi = kc.makeApiClient(k8s.BatchV1Api);
 
-export const getPods = async (namespace: string) => {
+export const getJobs = async (namespace: string) => {
   try {
-    const response = await k8sCoreApi.listNamespacedPod(namespace);
+    const response = await k8sBatchApi.listNamespacedJob(namespace);
     return response?.body?.items;
   } catch (err: any) {
     const ret = new Error(err.message);

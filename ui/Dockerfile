@@ -14,14 +14,12 @@ RUN npm run build
 FROM node:current-alpine as backend
 WORKDIR /api
 
-COPY ./backend .
-
-
 COPY backend/*.json .
-COPY backend/src src/
-
 RUN npm install 
+
+COPY backend/src src/
 RUN npm run build
+
 COPY --from=frontend /app/dist /api/public
 
 ENTRYPOINT ["node", "dist/index.js"]

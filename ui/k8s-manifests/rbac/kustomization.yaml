@@ -1,6 +1,6 @@
 resources:
   - crb.yaml
   - pipeline_viewer_role.yaml
-  - pod_crb.yaml
-  - pod_viewer_role.yaml
+  - job_crb.yaml
+  - job_viewer_role.yaml
   - serviceaccount.yaml

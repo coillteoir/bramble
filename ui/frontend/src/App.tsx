@@ -101,10 +101,10 @@ const App = (): React.ReactNode => {
         <>
             <header className="flex">
                 <img className="size-10" src="/logo.svg" />
-                <h1 className="bg-slate-800 text-3xl font-bold">Bramble</h1>
+                <h1 className="text-3xl font-bold">Bramble</h1>
             </header>
-            <div className="flex h-full border-2 border-yellow-200">
-                <div className="inline-block w-1/3 border-2 border-green-500 lg:w-1/6">
+            <div className="flex h-full">
+                <div className="inline-block w-1/3 lg:w-1/6">
                     <NamespaceSearch
                         inputRef={inputRef}
                         setNamespace={setNamespace}

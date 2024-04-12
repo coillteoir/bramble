@@ -1,6 +1,51 @@
 import { Node, Edge } from "reactflow";
-import { Pod } from "kubernetes-models/v1";
+import { Job } from "kubernetes-models/batch/v1";
 import { pipelinesBrambleDev } from "./bramble-types";
+
+const jobStatusIcon = (job: Job | undefined) => {
+    if (job === undefined) {
+        return <span className="loading loading-dots loading-sm"></span>;
+    }
+    if (job.status?.succeeded !== 0) {
+        return (
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="size-6 shrink-0 stroke-current"
+                fill="none"
+                viewBox="0 0 24 24"
+            >
+                <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+            </svg>
+        );
+    }
+    if (job.status?.active !== 0) {
+        return (
+            <span className="loading loading-spinner loading-sm text-blue-800" />
+        );
+    }
+    if (job.status.failed !== 0) {
+        return (
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="size-6 shrink-0 stroke-current"
+                fill="none"
+                viewBox="0 0 24 24"
+            >
+                <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+            </svg>
+        );
+    }
+};
 
 export const generateNodes = (
     tasks: {
@@ -11,7 +56,7 @@ export const generateNodes = (
             dependencies?: string[] | undefined;
         };
     }[],
-    pods: Pod[] | undefined,
+    jobs: Job[] | undefined,
     execution: pipelinesBrambleDev.v1alpha1.Execution | undefined
 ): Node[] =>
     tasks.map(
@@ -24,64 +69,15 @@ export const generateNodes = (
             };
         }): Node => {
             // get pod of current task
-            const taskPod: Pod | undefined =
+            const taskJob: Job | undefined =
                 execution &&
-                pods?.find(
-                    (pod: Pod) =>
+                jobs?.find(
+                    (job: Job) =>
                         execution.metadata?.name ===
-                            pod.metadata?.labels?.["bramble-execution"] &&
-                        pod.metadata?.labels?.["bramble-task"] === task.name
+                            job.metadata?.labels?.["bramble-execution"] &&
+                        job.metadata?.labels?.["bramble-task"] === task.name
                 );
-            const spinner =
-                execution &&
-                (() => {
-                    if (taskPod === undefined) {
-                        return (
-                            <span className="loading loading-dots loading-sm"></span>
-                        );
-                    }
-                    switch (taskPod.status?.phase) {
-                        case "Succeeded":
-                            return (
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="size-6 shrink-0 stroke-current"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                    />
-                                </svg>
-                            );
-                        case "Running":
-                            return (
-                                <span className="loading loading-spinner loading-sm text-blue-800" />
-                            );
-                        case "Failed":
-                            return (
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="size-6 shrink-0 stroke-current"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                    />
-                                </svg>
-                            );
-                    }
-                    return (
-                        <span className="loading loading-dots loading-sm"></span>
-                    );
-                })();
+            const spinner = execution && jobStatusIcon(taskJob);
 
             return {
                 id: task.name,

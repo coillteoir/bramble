@@ -1,7 +1,7 @@
 import React from "react";
 
 import ReactFlow, { Node, Edge } from "reactflow";
-import { Pod } from "kubernetes-models/v1";
+import { Job } from "kubernetes-models/batch/v1";
 import { pipelinesBrambleDev } from "./bramble-types";
 
 import { getLayoutedElements } from "./Layout.tsx";
@@ -11,20 +11,20 @@ const ExecutionView = (props: {
     pipeline: pipelinesBrambleDev.v1alpha1.Pipeline;
     execution: pipelinesBrambleDev.v1alpha1.Execution | undefined;
 }): React.ReactNode => {
-    const [pods, setPods] = React.useState<Array<Pod>>(new Array<Pod>());
+    const [jobs, setJobs] = React.useState<Array<Job>>(new Array<Job>());
 
-    const fetchNamespacedPods = async (namespace: string | undefined) => {
+    const fetchNamespacedJobs = async (namespace: string | undefined) => {
         if (namespace === undefined) {
             console.log("undefined namespace");
             return;
         }
 
-        console.log(`Fetching pods in ${namespace} ${Date()}`);
+        console.log(`Fetching jobs in ${namespace} ${Date()}`);
         try {
-            await fetch(`http://localhost:5555/resources/pods/${namespace}`)
+            await fetch(`http://localhost:5555/resources/jobs/${namespace}`)
                 .then((response) => response.json())
                 .then((jsonData) => {
-                    setPods(jsonData);
+                    setJobs(jsonData);
                 });
         } catch (error) {
             console.error(error);
@@ -33,7 +33,7 @@ const ExecutionView = (props: {
 
     const layouted = getLayoutedElements(
         props.pipeline.spec?.tasks
-            ? generateNodes(props.pipeline.spec?.tasks, pods, props.execution)
+            ? generateNodes(props.pipeline.spec?.tasks, jobs, props.execution)
             : ([] as Node[]),
         props.pipeline.spec?.tasks
             ? generateEdges(props.pipeline.spec?.tasks)
@@ -45,7 +45,7 @@ const ExecutionView = (props: {
 
     React.useEffect(() => {
         const interval = setInterval(
-            () => fetchNamespacedPods(props.execution?.metadata?.namespace),
+            () => fetchNamespacedJobs(props.execution?.metadata?.namespace),
             1000
         );
         return () => {

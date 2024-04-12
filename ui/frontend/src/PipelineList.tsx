@@ -14,18 +14,16 @@ const ExecutionList = (props: {
     <ul className="menu rounded-box bg-slate-700">
         {props.executions
             .filter((exe: Execution) => exe.spec?.pipeline === props.pipeline)
-            .map((exe: Execution, i: number) => {
-                return (
-                    <li
-                        onClick={() =>
-                            props.setFocusedExecution(exe.metadata?.name)
-                        }
-                        key={i}
-                    >
-                        <p>{exe.metadata?.name}</p>
-                    </li>
-                );
-            })}
+            .map((exe: Execution, i: number) => (
+                <li
+                    onClick={() =>
+                        props.setFocusedExecution(exe.metadata?.name)
+                    }
+                    key={i}
+                >
+                    <p>{exe.metadata?.name}</p>
+                </li>
+            ))}
     </ul>
 );
 

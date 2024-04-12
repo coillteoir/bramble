@@ -1,11 +1,11 @@
 OWNER?=davidlynchsd
 
-build: crd-generate
+build: crd-sync
 	make -C operator
 	make -C ui
 	make -C git-proxy
 
-docker-build: crd-generate
+docker-build: crd-sync
 	make -C operator docker-build OWNER=${OWNER}
 	make -C ui docker-build OWNER=${OWNER}
 	make -C git-proxy docker-build OWNER=${OWNER}
@@ -28,7 +28,8 @@ docker-push:
 
 build-push: docker-build docker-push
 
-crd-generate:
+crd-sync:
 	make -C operator manifests
 	npx @kubernetes-models/crd-generate --input operator/config/crd/bases/* --output ui/frontend/src/bramble-types
 	npx @kubernetes-models/crd-generate --input operator/config/crd/bases/* --output ui/backend/src/bramble-types
+	cp operator/api/v1alpha1/execution_types.go git-proxy/v1alpha1/execution_types.go
