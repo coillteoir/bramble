@@ -118,7 +118,7 @@ func initExecution(
 								Image: "alpine/git",
 								Command: []string{
 									"sh", "-c",
-									fmt.Sprintf("rm -rf %v && git clone %v --branch=%v %v",
+									fmt.Sprintf("rm -rf %v && git clone %v --depth=1 --branch=%v %v",
 										execution.ObjectMeta.Name,
 										execution.Spec.Repo,
 										execution.Spec.Branch,

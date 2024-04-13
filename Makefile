@@ -12,7 +12,7 @@ docker-build: crd-sync
 
 build-deploy: build-push k8s-deploy
 
-manifests: crd-generate
+manifests: crd-sync
 	kustomize build . > resources.yaml
 
 k8s-deploy: manifests

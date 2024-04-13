@@ -1,8 +1,24 @@
 import { pipelinesBrambleDev } from "./bramble-types";
+
 import Pipeline = pipelinesBrambleDev.v1alpha1.Pipeline;
 import Execution = pipelinesBrambleDev.v1alpha1.Execution;
 import React from "react";
 import "./index.css";
+
+import { ExecutionPhase, PipelineStatusIcon } from "./ExecutionGraph";
+
+const ExecutionStatusIcon = (props: { phase: string | undefined }) => {
+    switch (props.phase) {
+        case "running":
+            return <PipelineStatusIcon phase={ExecutionPhase.Running} />;
+        case "error":
+            return <PipelineStatusIcon phase={ExecutionPhase.Failure} />;
+        case "completed":
+            return <PipelineStatusIcon phase={ExecutionPhase.Success} />;
+        default:
+            return <PipelineStatusIcon phase={ExecutionPhase.Pending} />;
+    }
+};
 
 const ExecutionList = (props: {
     pipeline: string | undefined;
@@ -21,7 +37,10 @@ const ExecutionList = (props: {
                     }
                     key={i}
                 >
-                    <p>{exe.metadata?.name}</p>
+                    <div className="flex">
+                        <p className="inline-block">{exe.metadata?.name}</p>
+                        <ExecutionStatusIcon phase={exe.status?.phase} />
+                    </div>
                 </li>
             ))}
     </ul>

@@ -141,6 +141,7 @@ func executeUsingDfs(
 		}
 
 		jobs.Items = append(jobs.Items, *job)
+		execution.Status.Phase = pipelinesv1alpha1.ExecutionRunning
 		execution.Status.Running = append(execution.Status.Running, task.Name)
 		return jobs, nil
 	}

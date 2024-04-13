@@ -171,6 +171,10 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 		}
 		if err != nil {
 			execution.Status.Phase = pipelinesv1alpha1.ExecutionError
+			err = reconciler.Status().Update(ctx, execution)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
 			return ctrl.Result{}, err
 		}
 
