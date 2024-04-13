@@ -108,7 +108,6 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 	var pvc *corev1.PersistentVolumeClaim
 	if !execution.Status.VolumeProvisioned {
 		err = initExecution(ctx, reconciler, execution, pvc)
-
 		if err != nil {
 			return ctrl.Result{}, err
 		}
@@ -139,6 +138,10 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 				if execution.Status.RepoCloned {
 					logger.Info(fmt.Sprintf("Execution: %v repo cloned", execution.ObjectMeta.Name))
 				}
+				err = reconciler.Status().Update(ctx, execution)
+				if err != nil {
+					return ctrl.Result{}, err
+				}
 			}
 		}
 	}
@@ -161,6 +164,11 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 			exeJobs,
 			pvc,
 		)
+		logger.Info(fmt.Sprintf("%v", execution.Status))
+		err = reconciler.Status().Update(ctx, execution)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 		if err != nil {
 			execution.Status.Phase = pipelinesv1alpha1.ExecutionError
 			return ctrl.Result{}, err

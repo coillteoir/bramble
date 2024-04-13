@@ -34,7 +34,6 @@ const (
 
 func generateAssociationMatrix(pipeline *pipelinesv1alpha1.Pipeline) [][]int {
 	matrix := make([][]int, len(pipeline.Spec.Tasks))
-
 	for i, task := range pipeline.Spec.Tasks {
 		for _, tasktask := range pipeline.Spec.Tasks {
 			if slices.Contains(task.Spec.Dependencies, tasktask.Name) {
@@ -61,9 +60,6 @@ func validateTask(
 	for _, job := range jobList.Items {
 		if job.ObjectMeta.Labels["bramble-task"] == task.Name {
 			baseStr := fmt.Sprintf("Execution: %v Task: %v", execution.ObjectMeta.Name, task.Name)
-			// Job Completed
-			// Job Error
-			// Job Running
 			logger.Info(fmt.Sprintf("%v %v", baseStr, job.Status.Succeeded))
 			if job.Status.Succeeded != 0 {
 				if start == 0 {
@@ -134,7 +130,8 @@ func executeUsingDfs(
 	if err != nil {
 		return nil, err
 	}
-	// BUG: When running controller-manger in cluster, pods are created multiple times and executions do not work
+	// BUG: When running controller-manger in cluster,
+	// jobs are created multiple times and executions do not work
 	if toRun {
 		logger.Info(fmt.Sprintf("Executing task: %v", task.Name))
 
@@ -188,7 +185,6 @@ func generateTaskPod(
 				"bramble-task":      task.Name,
 			},
 		}, Spec: batchv1.JobSpec{
-			// TODO USE JOB START TIME TO SHOW TIME RUNNING IN UI
 			Completions:  (func(num int32) *int32 { return &num }(1)),
 			BackoffLimit: (func(num int32) *int32 { return &num }(1)),
 			Template: corev1.PodTemplateSpec{

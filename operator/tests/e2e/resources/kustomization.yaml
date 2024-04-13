@@ -1,6 +1,6 @@
 resources:
-  - bramble_execution.yaml
-  - bramble_pipeline.yaml
+  #  - bramble_execution.yaml
+  #  - bramble_pipeline.yaml
   - one-to-many-execution.yaml
   - one-to-many-pipeline.yaml
   - simple_execution.yaml
