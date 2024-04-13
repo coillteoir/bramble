@@ -24,8 +24,8 @@ func generateUnstructured(execution *v1alpha1.Execution) *unstructured.Unstructu
 			"apiVersion": "pipelines.bramble.dev/v1alpha1",
 			"kind":       "Execution",
 			"metadata": map[string]any{
-				"generateName":      execution.ObjectMeta.GenerateName,
-				"namespace": execution.ObjectMeta.Namespace,
+				"generateName": execution.ObjectMeta.GenerateName,
+				"namespace":    execution.ObjectMeta.Namespace,
 			},
 			"spec": map[string]any{
 				"repo":     execution.Spec.Repo,
@@ -45,8 +45,8 @@ func generateUnstructured(execution *v1alpha1.Execution) *unstructured.Unstructu
 func ExecutePipeline(spec *v1alpha1.ExecutionSpec, k8sClient *dynamic.DynamicClient, sugar *zap.SugaredLogger) error {
 	execution := &v1alpha1.Execution{
 		ObjectMeta: metav1.ObjectMeta{
-			GenerateName:      fmt.Sprintf("%v-execution", spec.Pipeline),
-			Namespace: "default",
+			GenerateName: fmt.Sprintf("%v-execution", spec.Pipeline),
+			Namespace:    "default",
 		},
 		Spec: *spec,
 	}

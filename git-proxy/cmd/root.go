@@ -7,8 +7,8 @@ package cmd
 import (
 	"fmt"
 	"net/http"
-	"path/filepath"
 	"os"
+	"path/filepath"
 	"time"
 
 	"bramble-git-proxy/util"
@@ -80,7 +80,7 @@ var rootCmd = &cobra.Command{
 			sugar.Infof("pipeline tested is: %s", pipeline)
 			spec := &v1alpha1.ExecutionSpec{
 				Pipeline: pipeline,
-				Repo:     filepath.Join("https://github.com",owner, repo),
+				Repo:     filepath.Join("https://github.com", owner, repo),
 				Branch:   branch,
 			}
 
