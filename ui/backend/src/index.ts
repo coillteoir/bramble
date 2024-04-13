@@ -63,10 +63,12 @@ app.get(
                 error: `Cannnot fetch ${req.params.resource} from namespace: ${req.params.namespace}`,
             });
         }
+
     }
 );
 if (!isNaN(port)) {
     app.listen(port, () => {
         console.log("Server is running");
     });
+
 }

@@ -3,7 +3,7 @@ import { getLogger } from "log4js";
 import { Job } from "kubernetes-models/batch/v1";
 import { Pod } from "kubernetes-models/v1";
 import { pipelinesBrambleDev } from "./bramble-types";
-
+import {getLogger} from "log4js"
 const k8s = require("@kubernetes/client-node");
 
 import Pipeline = pipelinesBrambleDev.v1alpha1.Pipeline;
@@ -30,6 +30,7 @@ if (process.env.KUBERNETES_SERVICE_HOST) {
         logger.error(err);
         process.exit(1);
     }
+
 }
 
 logger.info("CONNECTED!");
@@ -142,4 +143,5 @@ export const getExecutions = async (
         logger.error(ret);
         throw ret;
     }
+
 };

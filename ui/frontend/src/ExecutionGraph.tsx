@@ -84,6 +84,7 @@ export const generateNodes = (
     jobs: Job[] | undefined,
     execution: Execution | undefined,
     taskSetter: any
+
 ): Node[] =>
     tasks.map(
         (task: {
@@ -99,11 +100,14 @@ export const generateNodes = (
                 execution &&
                 jobs?.find(
                     (job: Job) =>
+
                         execution.metadata?.name ===
                             job.metadata?.labels?.["bramble-execution"] &&
                         job.metadata?.labels?.["bramble-task"] === task.name
                 );
+
             const spinner = execution && jobStatusIcon(taskJob);
+
 
             return {
                 id: task.name,
@@ -112,11 +116,13 @@ export const generateNodes = (
                 position: { x: 0, y: 0 },
                 data: {
                     label: (
+
                         <div
                             className="group"
                             onClick={() => taskSetter(task.name)}
                         >
                             <p className="">{task.name}</p>
+
                             {spinner}
                         </div>
                     ),

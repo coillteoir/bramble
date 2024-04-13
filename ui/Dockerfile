@@ -19,7 +19,6 @@ RUN npm install
 
 COPY backend/src src/
 RUN npm run build
-
 COPY --from=frontend /app/dist /api/public
 
 ENTRYPOINT ["node", "dist/index.js"]

@@ -6,3 +6,4 @@ resources:
 - pod_crb.yaml
 - pod_viewer_role.yaml
 - serviceaccount.yaml
+
