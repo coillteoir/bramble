@@ -22,6 +22,7 @@ export const PipelineStatusIcon = (props: { phase: ExecutionPhase }) => {
                     viewBox="0 0 24 24"
                 >
                     <path
+                        stroke="green"
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth="2"
@@ -42,6 +43,7 @@ export const PipelineStatusIcon = (props: { phase: ExecutionPhase }) => {
                     viewBox="0 0 24 24"
                 >
                     <path
+                        stroke="red"
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth="2"
