@@ -2,7 +2,7 @@ apiVersion: pipelines.bramble.dev/v1alpha1
 kind: Pipeline
 metadata:
   name: bramble
-  namespace: testns
+  namespace: bramble-test
 spec:
   tasks:
     - name: manifests

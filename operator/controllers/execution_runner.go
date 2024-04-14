@@ -57,48 +57,47 @@ func validateTask(
 
 	task := pipeline.Spec.Tasks[start]
 
-	for _, job := range jobList.Items {
-		if job.ObjectMeta.Labels["bramble-task"] == task.Name {
-			baseStr := fmt.Sprintf("Execution: %v Task: %v", execution.ObjectMeta.Name, task.Name)
-			logger.Info(fmt.Sprintf("%v %v", baseStr, job.Status.Succeeded))
-			if job.Status.Succeeded != 0 {
-				if start == 0 {
-					execution.Status.Phase = pipelinesv1alpha1.ExecutionCompleted
-					return false, nil
-				}
+	jobIndex := slices.IndexFunc(jobList.Items, func(job batchv1.Job) bool {
+		return (job.ObjectMeta.Labels["bramble-task"] == task.Name &&
+			job.ObjectMeta.Labels["bramble-execution"] == execution.ObjectMeta.Name)
+	})
+	if jobIndex != -1 {
+		job := jobList.Items[jobIndex]
+		baseStr := fmt.Sprintf("Execution: %v Task: %v", execution.ObjectMeta.Name, task.Name)
+		logger.Info(fmt.Sprintf("%v %v", baseStr, job.Status.Succeeded))
+		if job.Status.Succeeded != 0 {
+			if start == 0 {
+				execution.Status.Phase = pipelinesv1alpha1.ExecutionCompleted
 				return false, nil
 			}
-			if job.Status.Active != 0 {
-				return false, nil
-			}
-			if job.Status.Failed != 0 {
-				return false, fmt.Errorf("job: %v failed", job.ObjectMeta.Name)
-			}
+			return false, nil
+		}
+		if job.Status.Active != 0 {
+			return false, nil
+		}
+		if job.Status.Failed != 0 {
+			return false, fmt.Errorf("job: %v failed", job.ObjectMeta.Name)
 		}
 	}
-
 	logger.Info(fmt.Sprintf("Checking dependencies of task: %v", task.Name))
 
 	// Check dependencies have completed before running task.
 	count := len(task.Spec.Dependencies)
 
 	for _, dep := range task.Spec.Dependencies {
-		for _, job := range jobList.Items {
-			if job.ObjectMeta.Labels["bramble-execution"] == execution.ObjectMeta.Name &&
+		jobIndex := slices.IndexFunc(jobList.Items, func(job batchv1.Job) bool {
+			return (job.ObjectMeta.Labels["bramble-execution"] == execution.ObjectMeta.Name &&
 				job.ObjectMeta.Labels["bramble-task"] == dep &&
-				job.Status.Succeeded == 1 {
-				count--
-			}
+				job.Status.Succeeded == 1)
+		})
+		if jobIndex != -1 {
+			count--
 		}
-
-		logger.Info(
-			fmt.Sprintf(
-				"Task: %v, Dependency: %v, Count: %v",
-				task.Name,
-				dep,
-				count,
-			),
-		)
+		logger.Info(fmt.Sprintf("Task: %v, Dependency: %v, Count: %v",
+			task.Name,
+			dep,
+			count,
+		))
 	}
 
 	return count == 0, nil
@@ -135,11 +134,10 @@ func executeUsingDfs(
 	if toRun {
 		logger.Info(fmt.Sprintf("Executing task: %v", task.Name))
 
-		job, err := generateTaskPod(execution, &task, pvc)
+		job, err := generateTaskJob(execution, &task, pvc)
 		if err != nil {
 			return nil, err
 		}
-
 		jobs.Items = append(jobs.Items, *job)
 		execution.Status.Phase = pipelinesv1alpha1.ExecutionRunning
 		execution.Status.Running = append(execution.Status.Running, task.Name)
@@ -148,7 +146,6 @@ func executeUsingDfs(
 
 	for i, node := range matrix[start] {
 		if node == 1 && !visited[i] {
-
 			downstreamJobs, err := executeUsingDfs(
 				matrix,
 				i,
@@ -168,7 +165,7 @@ func executeUsingDfs(
 	return jobs, nil
 }
 
-func generateTaskPod(
+func generateTaskJob(
 	execution *pipelinesv1alpha1.Execution,
 	task *pipelinesv1alpha1.PLTask,
 	pvc *corev1.PersistentVolumeClaim,

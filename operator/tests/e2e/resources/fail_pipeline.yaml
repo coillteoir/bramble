@@ -1,12 +1,11 @@
 apiVersion: pipelines.bramble.dev/v1alpha1
 kind: Pipeline
 metadata:
-  name: simple-test
+  name: failing
   namespace: bramble-test
 spec:
   tasks:
-    - name: root
-      spec:
-        image: ubuntu
-        command:
-          - pwd
+  - name: fail
+    spec:
+      image: alpine
+      command: ["false"]

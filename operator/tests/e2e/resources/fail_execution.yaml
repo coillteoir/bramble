@@ -1,9 +1,9 @@
 apiVersion: pipelines.bramble.dev/v1alpha1
 kind: Execution
 metadata:
-  name: bramble
+  name: fail
   namespace: bramble-test
 spec:
   repo: https://github.com/coillteoir/bramble
   branch: master
-  pipeline: bramble
+  pipeline: failing

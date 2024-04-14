@@ -1,8 +1,8 @@
 apiVersion: pipelines.bramble.dev/v1alpha1
 Kind: Pipeline
 metadata:
-  name: testns
-  namespace: testns
+  name: bramble-test
+  namespace: bramble-test
 spec:
   tasks:
 

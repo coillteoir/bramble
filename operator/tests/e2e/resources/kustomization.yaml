@@ -8,3 +8,5 @@ resources:
   - sleepy_execution.yaml
   - sleepy_pipeline.yaml
   - testns.yaml
+  - fail_execution.yaml
+  - fail_pipeline.yaml
