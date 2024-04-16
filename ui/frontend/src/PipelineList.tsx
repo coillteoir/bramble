@@ -1,8 +1,24 @@
 import { pipelinesBrambleDev } from "./bramble-types";
+
 import Pipeline = pipelinesBrambleDev.v1alpha1.Pipeline;
 import Execution = pipelinesBrambleDev.v1alpha1.Execution;
 import React from "react";
 import "./index.css";
+
+import { ExecutionPhase, PipelineStatusIcon } from "./ExecutionGraph";
+
+const ExecutionStatusIcon = (props: { phase: string | undefined }) => {
+    switch (props.phase) {
+        case "running":
+            return <PipelineStatusIcon phase={ExecutionPhase.Running} />;
+        case "error":
+            return <PipelineStatusIcon phase={ExecutionPhase.Failure} />;
+        case "completed":
+            return <PipelineStatusIcon phase={ExecutionPhase.Success} />;
+        default:
+            return <PipelineStatusIcon phase={ExecutionPhase.Pending} />;
+    }
+};
 
 const ExecutionList = (props: {
     pipeline: string | undefined;
@@ -14,18 +30,19 @@ const ExecutionList = (props: {
     <ul className="menu rounded-box bg-slate-700">
         {props.executions
             .filter((exe: Execution) => exe.spec?.pipeline === props.pipeline)
-            .map((exe: Execution, i: number) => {
-                return (
-                    <li
-                        onClick={() =>
-                            props.setFocusedExecution(exe.metadata?.name)
-                        }
-                        key={i}
-                    >
-                        <p>{exe.metadata?.name}</p>
-                    </li>
-                );
-            })}
+            .map((exe: Execution, i: number) => (
+                <li
+                    onClick={() =>
+                        props.setFocusedExecution(exe.metadata?.name)
+                    }
+                    key={i}
+                >
+                    <div className="flex">
+                        <p className="inline-block">{exe.metadata?.name}</p>
+                        <ExecutionStatusIcon phase={exe.status?.phase} />
+                    </div>
+                </li>
+            ))}
     </ul>
 );
 

@@ -12,7 +12,7 @@ linters-settings:
     threshold: 100
   funlen:
     lines: -1 # the number of lines (code + empty lines) is not a right metric and leads to code without empty line or one-liner.
-    statements: 40
+    statements: 50
   goconst:
     min-len: 2
     min-occurrences: 3
@@ -32,8 +32,8 @@ linters-settings:
     min-complexity: 15
   gofmt:
     rewrite-rules:
-      - pattern: 'interface{}'
-        replacement: 'any'
+      - pattern: "interface{}"
+        replacement: "any"
   goimports:
     local-prefixes: github.com/golangci/golangci-lint
   gomnd:
@@ -44,10 +44,10 @@ linters-settings:
       - condition
       - return
     ignored-numbers:
-      - '0'
-      - '1'
-      - '2'
-      - '3'
+      - "0"
+      - "1"
+      - "2"
+      - "3"
     ignored-functions:
       - strings.SplitN
 
@@ -116,7 +116,7 @@ linters:
     - unparam
     - unused
     - gocognit
-    - gocritic 
+    - gocritic
     - nestif
     - prealloc
 

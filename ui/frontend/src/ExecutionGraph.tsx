@@ -1,6 +1,75 @@
 import { Node, Edge } from "reactflow";
-import { Pod } from "kubernetes-models/v1";
+import { Job } from "kubernetes-models/batch/v1";
 import { pipelinesBrambleDev } from "./bramble-types";
+
+import Execution = pipelinesBrambleDev.v1alpha1.Execution;
+
+export enum ExecutionPhase {
+    Success,
+    Running,
+    Pending,
+    Failure,
+}
+
+export const PipelineStatusIcon = (props: { phase: ExecutionPhase }) => {
+    switch (props.phase) {
+        case ExecutionPhase.Success:
+            return (
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="size-6 shrink-0 stroke-current"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke="green"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                </svg>
+            );
+        case ExecutionPhase.Running:
+            return (
+                <span className="loading loading-spinner loading-sm text-blue-800" />
+            );
+        case ExecutionPhase.Failure:
+            return (
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="size-6 shrink-0 stroke-current"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke="red"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                </svg>
+            );
+        case ExecutionPhase.Pending:
+            return <span className="loading loading-dots loading-sm"></span>;
+    }
+};
+
+const jobStatusIcon = (job: Job | undefined) => {
+    if (job === undefined) {
+        return <PipelineStatusIcon phase={ExecutionPhase.Pending} />;
+    }
+    if (job.status?.succeeded) {
+        return <PipelineStatusIcon phase={ExecutionPhase.Success} />;
+    }
+    if (job.status?.failed) {
+        return <PipelineStatusIcon phase={ExecutionPhase.Failure} />;
+    }
+    if (job.status?.active) {
+        return <PipelineStatusIcon phase={ExecutionPhase.Running} />;
+    }
+};
 
 export const generateNodes = (
     tasks: {
@@ -9,10 +78,13 @@ export const generateNodes = (
             image: string;
             command: string[];
             dependencies?: string[] | undefined;
+            workDir?: string | undefined;
         };
     }[],
-    pods: Pod[] | undefined,
-    execution: pipelinesBrambleDev.v1alpha1.Execution | undefined
+    jobs: Job[] | undefined,
+    execution: Execution | undefined,
+    taskSetter: any
+
 ): Node[] =>
     tasks.map(
         (task: {
@@ -24,64 +96,18 @@ export const generateNodes = (
             };
         }): Node => {
             // get pod of current task
-            const taskPod: Pod | undefined =
+            const taskJob: Job | undefined =
                 execution &&
-                pods?.find(
-                    (pod: Pod) =>
+                jobs?.find(
+                    (job: Job) =>
+
                         execution.metadata?.name ===
-                            pod.metadata?.labels?.["bramble-execution"] &&
-                        pod.metadata?.labels?.["bramble-task"] === task.name
+                            job.metadata?.labels?.["bramble-execution"] &&
+                        job.metadata?.labels?.["bramble-task"] === task.name
                 );
-            const spinner =
-                execution &&
-                (() => {
-                    if (taskPod === undefined) {
-                        return (
-                            <span className="loading loading-dots loading-sm"></span>
-                        );
-                    }
-                    switch (taskPod.status?.phase) {
-                        case "Succeeded":
-                            return (
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="size-6 shrink-0 stroke-current"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                    />
-                                </svg>
-                            );
-                        case "Running":
-                            return (
-                                <span className="loading loading-spinner loading-sm text-blue-800" />
-                            );
-                        case "Failed":
-                            return (
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="size-6 shrink-0 stroke-current"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                    />
-                                </svg>
-                            );
-                    }
-                    return (
-                        <span className="loading loading-dots loading-sm"></span>
-                    );
-                })();
+
+            const spinner = execution && jobStatusIcon(taskJob);
+
 
             return {
                 id: task.name,
@@ -90,19 +116,13 @@ export const generateNodes = (
                 position: { x: 0, y: 0 },
                 data: {
                     label: (
-                        <div className="group">
+
+                        <div
+                            className="group"
+                            onClick={() => taskSetter(task.name)}
+                        >
                             <p className="">{task.name}</p>
-                            <p className="hidden group-hover:block">
-                                Image: {task.spec.image}
-                            </p>
-                            <p className="hidden group-hover:block">
-                                Command: {task.spec.command}
-                            </p>
-                            {task.spec.dependencies && (
-                                <p className="hidden group-hover:block">
-                                    Dependencies: {task.spec.dependencies}
-                                </p>
-                            )}
+
                             {spinner}
                         </div>
                     ),

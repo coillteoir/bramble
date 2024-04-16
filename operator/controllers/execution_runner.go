@@ -22,14 +22,18 @@ import (
 	"slices"
 
 	pipelinesv1alpha1 "github.com/davidlynch-sd/bramble/api/v1alpha1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+const (
+	sourceVolumeName = "source-volume"
+)
+
 func generateAssociationMatrix(pipeline *pipelinesv1alpha1.Pipeline) [][]int {
 	matrix := make([][]int, len(pipeline.Spec.Tasks))
-
 	for i, task := range pipeline.Spec.Tasks {
 		for _, tasktask := range pipeline.Spec.Tasks {
 			if slices.Contains(task.Spec.Dependencies, tasktask.Name) {
@@ -47,148 +51,130 @@ func validateTask(
 	start int,
 	pipeline *pipelinesv1alpha1.Pipeline,
 	execution *pipelinesv1alpha1.Execution,
-	podList *corev1.PodList,
+	jobList *batchv1.JobList,
 ) (bool, error) {
 	logger := log.Log.WithName(fmt.Sprintf("Execution: %v", execution.ObjectMeta.Name))
 
 	task := pipeline.Spec.Tasks[start]
 
-	for _, pod := range podList.Items {
-		if pod.ObjectMeta.Labels["bramble-task"] == task.Name {
-			baseStr := fmt.Sprintf("Execution: %v Task: %v", execution.ObjectMeta.Name, task.Name)
-
-			logger.Info(fmt.Sprintf("%v %v", baseStr, pod.Status.Phase))
-
-			switch pod.Status.Phase {
-			case corev1.PodRunning, corev1.PodPending:
-				return false, nil
-
-			case corev1.PodSucceeded:
-
-				if start == 0 {
-					execution.Status.Completed = true
-					return false, nil
-				}
-				return false, nil
-
-			case corev1.PodFailed:
-				return false, fmt.Errorf("pod: %v failed", pod.ObjectMeta.Name)
-
-			default:
-				logger.Info(fmt.Sprintf("%v %v Pod created but Phase undefined", baseStr, pod.Status.Phase))
+	jobIndex := slices.IndexFunc(jobList.Items, func(job batchv1.Job) bool {
+		return (job.ObjectMeta.Labels["bramble-task"] == task.Name &&
+			job.ObjectMeta.Labels["bramble-execution"] == execution.ObjectMeta.Name)
+	})
+	if jobIndex != -1 {
+		job := jobList.Items[jobIndex]
+		baseStr := fmt.Sprintf("Execution: %v Task: %v", execution.ObjectMeta.Name, task.Name)
+		logger.Info(fmt.Sprintf("%v %v", baseStr, job.Status.Succeeded))
+		if job.Status.Succeeded != 0 {
+			if start == 0 {
+				execution.Status.Phase = pipelinesv1alpha1.ExecutionCompleted
 				return false, nil
 			}
+			return false, nil
+		}
+		if job.Status.Active != 0 {
+			return false, nil
+		}
+		if job.Status.Failed != 0 {
+			return false, fmt.Errorf("job: %v failed", job.ObjectMeta.Name)
 		}
 	}
-
 	logger.Info(fmt.Sprintf("Checking dependencies of task: %v", task.Name))
 
 	// Check dependencies have completed before running task.
 	count := len(task.Spec.Dependencies)
 
 	for _, dep := range task.Spec.Dependencies {
-		for _, pod := range podList.Items {
-			if pod.ObjectMeta.Labels["bramble-execution"] == execution.ObjectMeta.Name &&
-				pod.ObjectMeta.Labels["bramble-task"] == dep &&
-				pod.Status.Phase == corev1.PodSucceeded {
-				count--
-			}
+		jobIndex := slices.IndexFunc(jobList.Items, func(job batchv1.Job) bool {
+			return (job.ObjectMeta.Labels["bramble-execution"] == execution.ObjectMeta.Name &&
+				job.ObjectMeta.Labels["bramble-task"] == dep &&
+				job.Status.Succeeded == 1)
+		})
+		if jobIndex != -1 {
+			count--
 		}
-
-		logger.Info(
-			fmt.Sprintf(
-				"Task: %v, Dependency: %v, Count: %v",
-				task.Name,
-				dep,
-				count,
-			),
-		)
+		logger.Info(fmt.Sprintf("Task: %v, Dependency: %v, Count: %v",
+			task.Name,
+			dep,
+			count,
+		))
 	}
 
 	return count == 0, nil
 }
 
-// I think creating a custom struct to handle execution task logic would be the move
-// This function will have 10 args by the time it's finished.
 func executeUsingDfs(
 	matrix [][]int,
 	start int,
 	visited []bool,
 	pipeline *pipelinesv1alpha1.Pipeline,
 	execution *pipelinesv1alpha1.Execution,
-	podList *corev1.PodList,
+	jobList *batchv1.JobList,
 	pvc *corev1.PersistentVolumeClaim,
-) ([]*corev1.Pod, error) {
+) (*batchv1.JobList, error) {
 	logger := log.Log.WithName(fmt.Sprintf("Execution: %v", execution.ObjectMeta.Name))
 
 	visited[start] = true
 
 	task := pipeline.Spec.Tasks[start]
 
-	podsToExecute := make([]*corev1.Pod, 0)
+	jobs := &batchv1.JobList{}
 
 	toRun, err := validateTask(
 		start,
 		pipeline,
 		execution,
-		podList,
+		jobList,
 	)
 	if err != nil {
 		return nil, err
 	}
-	// BUG: When running controller-manger in cluster, pods are created multiple times and executions do not work
+	// BUG: When running controller-manger in cluster,
+	// jobs are created multiple times and executions do not work
 	if toRun {
 		logger.Info(fmt.Sprintf("Executing task: %v", task.Name))
 
-		pod, err := runTask(execution, &task, pvc)
+		job, err := generateTaskJob(execution, &task, pvc)
 		if err != nil {
 			return nil, err
 		}
-
-		podsToExecute = append(podsToExecute, pod)
-
-		return podsToExecute, nil
+		jobs.Items = append(jobs.Items, *job)
+		execution.Status.Phase = pipelinesv1alpha1.ExecutionRunning
+		execution.Status.Running = append(execution.Status.Running, task.Name)
+		return jobs, nil
 	}
 
 	for i, node := range matrix[start] {
 		if node == 1 && !visited[i] {
-			logger.Info(
-				fmt.Sprintf(
-					"recursing to dependency %v of task %v",
-					pipeline.Spec.Tasks[i].Name,
-					task.Name,
-				),
-			)
-
-			downstreamPods, err := executeUsingDfs(
+			downstreamJobs, err := executeUsingDfs(
 				matrix,
 				i,
 				visited,
 				pipeline,
 				execution,
-				podList,
+				jobList,
 				pvc,
 			)
 			if err != nil {
 				return nil, err
 			}
 
-			podsToExecute = append(podsToExecute, downstreamPods...)
+			jobs.Items = append(jobs.Items, downstreamJobs.Items...)
 		}
 	}
-	return podsToExecute, nil
+	return jobs, nil
 }
 
-func runTask(
+func generateTaskJob(
 	execution *pipelinesv1alpha1.Execution,
 	task *pipelinesv1alpha1.PLTask,
 	pvc *corev1.PersistentVolumeClaim,
-) (*corev1.Pod, error) {
+) (*batchv1.Job, error) {
 	if pvc == nil {
 		return nil, fmt.Errorf("NO PVC for pod")
 	}
 
-	pod := &corev1.Pod{
+	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: execution.ObjectMeta.Name + "-" + task.Name + "-",
 			Namespace:    execution.ObjectMeta.Namespace,
@@ -196,28 +182,35 @@ func runTask(
 				"bramble-execution": execution.ObjectMeta.Name,
 				"bramble-task":      task.Name,
 			},
-		}, Spec: corev1.PodSpec{
-			RestartPolicy: corev1.RestartPolicyNever,
-			Containers: []corev1.Container{
-				{
-					Name:    task.Name,
-					Image:   task.Spec.Image,
-					Command: task.Spec.Command,
-					VolumeMounts: []corev1.VolumeMount{
+		}, Spec: batchv1.JobSpec{
+			Completions:  (func(num int32) *int32 { return &num }(1)),
+			BackoffLimit: (func(num int32) *int32 { return &num }(1)),
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					RestartPolicy: corev1.RestartPolicyNever,
+					Containers: []corev1.Container{
 						{
-							Name:      "cloner-volume",
-							MountPath: sourceRoot,
+							Name:    task.Name,
+							Image:   task.Spec.Image,
+							Command: task.Spec.Command,
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      sourceVolumeName,
+									MountPath: sourceRoot,
+								},
+							},
+							WorkingDir:      filepath.Join(sourceRoot, execution.ObjectMeta.Name, task.Spec.Workdir),
+							ImagePullPolicy: corev1.PullIfNotPresent,
 						},
 					},
-					WorkingDir: filepath.Join(sourceRoot, execution.ObjectMeta.Name, task.Spec.Workdir),
-				},
-			},
-			Volumes: []corev1.Volume{
-				{
-					Name: "cloner-volume",
-					VolumeSource: corev1.VolumeSource{
-						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-							ClaimName: pvc.ObjectMeta.Name,
+					Volumes: []corev1.Volume{
+						{
+							Name: sourceVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+									ClaimName: pvc.ObjectMeta.Name,
+								},
+							},
 						},
 					},
 				},
@@ -225,5 +218,5 @@ func runTask(
 		},
 	}
 
-	return pod, nil
+	return job, nil
 }

@@ -20,9 +20,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	pipelinesv1alpha1 "github.com/davidlynch-sd/bramble/api/v1alpha1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -30,7 +32,6 @@ import (
 	types "k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -43,12 +44,21 @@ type ExecutionReconciler struct {
 //+kubebuilder:rbac:groups=pipelines.bramble.dev,resources=executions,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=pipelines.bramble.dev,resources=executions/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=pipelines.bramble.dev,resources=executions/finalizers,verbs=update
-//+kubebuilder:rbac:groups="",resources=pods;persistentvolumes;persistentvolumeclaims,verbs=create;delete;list;get
+//+kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=create;delete;list;get
+//+kubebuilder:rbac:groups="batch",resources=jobs,verbs=create;delete;list;get;watch
 
-const (
-	executionFinalizer = "executions.pipelines.bramble.dev/finalizer"
-	pvSuffix           = "-pv"
-)
+func toContinue(execution *pipelinesv1alpha1.Execution) bool {
+	if execution.Status.Phase == pipelinesv1alpha1.ExecutionError {
+		return false
+	}
+	if execution.Status.Phase == pipelinesv1alpha1.ExecutionCompleted {
+		return false
+	}
+	if execution.GetDeletionTimestamp() != nil {
+		return false
+	}
+	return true
+}
 
 func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
@@ -61,25 +71,9 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	logger := log.Log.WithName(fmt.Sprintf("Execution: %v", execution.ObjectMeta.Name))
-	if execution.Status.Error {
-		logger.Error(err, "Execution in failed state")
 
-		return ctrl.Result{}, errors.New("execution in failed state")
-	}
-	if execution.Status.Completed {
-		logger.Info("Completed!")
-
+	if !toContinue(execution) {
 		return ctrl.Result{}, nil
-	}
-
-	if execution.GetDeletionTimestamp() != nil {
-		if controllerutil.ContainsFinalizer(execution, executionFinalizer) {
-			err = teardownExecution(ctx, reconciler, execution)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-			return ctrl.Result{}, nil
-		}
 	}
 
 	pipeline, err := loadPipeline(execution, reconciler, ctx)
@@ -87,93 +81,59 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, err
 	}
 
-	// Check if volume exists
-	pvList := &corev1.PersistentVolumeList{}
-	err = reconciler.Client.List(ctx, pvList)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	for _, pv := range pvList.Items {
-		if pv.ObjectMeta.Name == execution.ObjectMeta.Name+pvSuffix {
-			execution.Status.VolumeProvisioned = (pv.Status.Phase == corev1.VolumeBound || pv.Status.Phase == corev1.VolumeAvailable)
-		}
-	}
-
-	var pvc *corev1.PersistentVolumeClaim
-	if !execution.Status.VolumeProvisioned {
-		err = initExecution(ctx, reconciler, execution, pvc)
-
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-	}
-
+	pvc := &corev1.PersistentVolumeClaim{}
 	listOptions := generateListOptions(execution)
 	pvcList, err := getExecutionPvcs(listOptions, reconciler, ctx)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	for i, p := range pvcList.Items {
-		if p.ObjectMeta.Labels["bramble-execution"] == execution.ObjectMeta.Name {
-			pvc = &pvcList.Items[i]
+	pvcIndex := slices.IndexFunc(pvcList.Items, func(p corev1.PersistentVolumeClaim) bool {
+		return p.ObjectMeta.Labels["bramble-execution"] == execution.ObjectMeta.Name
+	})
+	if pvcIndex != -1 {
+		pvc = &pvcList.Items[pvcIndex]
+
+		execution.Status.VolumeProvisioned = pvc != nil
+		err = reconciler.Status().Update(ctx, execution)
+		if err != nil {
+			return ctrl.Result{}, err
 		}
+		err = ctrl.SetControllerReference(execution, pvc, reconciler.Scheme)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	} else {
+		logger.Info("no pvc found after repo cloned")
 	}
 
-	exePods, err := getExecutionPods(listOptions, reconciler, ctx)
+	exeJobs, err := getExecutionJobs(listOptions, reconciler, ctx)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	// Check if the repo is cloned before proceeding
-	if !execution.Status.RepoCloned {
-		for _, pod := range exePods.Items {
-			if pod.ObjectMeta.Name == execution.ObjectMeta.Name+"-cloner" {
-				execution.Status.RepoCloned = pod.Status.Phase == corev1.PodSucceeded
-				if execution.Status.RepoCloned {
-					logger.Info(fmt.Sprintf("Execution: %v repo cloned", execution.ObjectMeta.Name))
-				}
-			}
-		}
-	}
-
-	// NOTE This algorithm assumes tasks are in their topological order
-	// Needs to be reworked to handle unsorted matricies
-
-	if execution.Status.VolumeProvisioned &&
-		execution.Status.RepoCloned && !execution.Status.Completed {
-
-		matrix := generateAssociationMatrix(pipeline)
-		logger.Info(fmt.Sprintf("MATRIX: %v", matrix))
-		visited := make([]bool, len(matrix))
-
-		podsToExecute, err := executeUsingDfs(
-			matrix,
-			0,
-			visited,
-			pipeline,
-			execution,
-			exePods,
-			pvc,
-		)
+	if verifyClone(exeJobs, execution) {
+		execution.Status.RepoCloned = true
+		logger.Info(fmt.Sprintf("Execution: %v repo cloned", execution.ObjectMeta.Name))
+		err = reconciler.Status().Update(ctx, execution)
 		if err != nil {
-			execution.Status.Error = true
-
 			return ctrl.Result{}, err
 		}
-
-		for _, pod := range podsToExecute {
-			err = reconciler.Client.Create(ctx, pod)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-		}
-
 	}
 
-	if !controllerutil.ContainsFinalizer(execution, executionFinalizer) {
-		controllerutil.AddFinalizer(execution, executionFinalizer)
+	if !execution.Status.VolumeProvisioned {
+		err = initExecution(ctx, reconciler, execution, pvc)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	if execution.Status.VolumeProvisioned &&
+		execution.Status.RepoCloned {
+		err = executePipeline(reconciler, ctx, execution, pipeline, exeJobs, pvc)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	err = reconciler.Update(ctx, execution)
@@ -185,7 +145,63 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, err
 	}
 
-	return ctrl.Result{RequeueAfter: time.Duration(time.Second)}, nil
+	return ctrl.Result{RequeueAfter: 15 * time.Duration(time.Second)}, nil
+}
+
+func executePipeline(
+	reconciler *ExecutionReconciler,
+	ctx context.Context,
+	execution *pipelinesv1alpha1.Execution,
+	pipeline *pipelinesv1alpha1.Pipeline,
+	exeJobs *batchv1.JobList,
+	pvc *corev1.PersistentVolumeClaim,
+) error {
+	matrix := generateAssociationMatrix(pipeline)
+
+	visited := make([]bool, len(matrix))
+	jobsToExecute, err := executeUsingDfs(
+		matrix,
+		0,
+		visited,
+		pipeline,
+		execution,
+		exeJobs,
+		pvc,
+	)
+	if err != nil {
+		execution.Status.Phase = pipelinesv1alpha1.ExecutionError
+		job_err := reconciler.Status().Update(ctx, execution)
+		if err != nil {
+			return err
+		}
+		return job_err
+	}
+	err = reconciler.Status().Update(ctx, execution)
+	if err != nil {
+		return err
+	}
+
+	for i := range jobsToExecute.Items {
+		err = ctrl.SetControllerReference(execution, &jobsToExecute.Items[i], reconciler.Scheme)
+		if err != nil {
+			return err
+		}
+		err = reconciler.Client.Create(ctx, &jobsToExecute.Items[i])
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func verifyClone(exeJobs *batchv1.JobList, execution *pipelinesv1alpha1.Execution) bool {
+	jobIndex := slices.IndexFunc(exeJobs.Items, func(job batchv1.Job) bool {
+		return (job.ObjectMeta.Labels["bramble-task"] == "cloner" && job.ObjectMeta.Labels["bramble-execution"] == execution.ObjectMeta.Name)
+	})
+	if jobIndex != -1 {
+		return exeJobs.Items[jobIndex].Status.Succeeded == 1
+	}
+	return false
 }
 
 func loadPipeline(
@@ -203,8 +219,6 @@ func loadPipeline(
 	}
 
 	if !pipeline.Status.ValidDeps {
-		// logger.Info("Invalid dependency tree in pipeline")
-
 		return nil, errors.New("invalid pipeline")
 	}
 	return pipeline, nil
@@ -224,18 +238,18 @@ func generateListOptions(execution *pipelinesv1alpha1.Execution) *client.ListOpt
 	}
 }
 
-func getExecutionPods(
+func getExecutionJobs(
 	listOptions *client.ListOptions,
 	reconciler *ExecutionReconciler,
 	ctx context.Context,
-) (*corev1.PodList, error) {
-	exePods := &corev1.PodList{}
+) (*batchv1.JobList, error) {
+	jobs := &batchv1.JobList{}
 
-	err := reconciler.Client.List(ctx, exePods, listOptions)
+	err := reconciler.Client.List(ctx, jobs, listOptions)
 	if err != nil {
 		return nil, err
 	}
-	return exePods, nil
+	return jobs, nil
 }
 
 func getExecutionPvcs(

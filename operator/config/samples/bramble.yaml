@@ -7,9 +7,9 @@ spec:
   tasks:
     - name: yay
       spec:
-          image: ubuntu
-          command: ["true"]
-          dependencies:
+        image: ubuntu
+        command: ["true"]
+        dependencies:
           - ui
           - operator
           - git-proxy

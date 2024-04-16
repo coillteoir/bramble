@@ -8,7 +8,13 @@ spec:
       spec:
         image: docker:latest
         command:
-          ["docker", "build", "-t", "davidlynchsd/morningbot", "/src/morningbot"]
+          [
+            "docker",
+            "build",
+            "-t",
+            "davidlynchsd/morningbot",
+            "/src/morningbot",
+          ]
         dependencies:
           - python-validate
           - json-validate
@@ -19,10 +25,15 @@ spec:
     - name: json-validate
       spec:
         image: python:3.11-slim
-        command: ["python", "-mjson.tool", "/src/morningbot/config/configuration_data.json"]
+        command:
+          [
+            "python",
+            "-mjson.tool",
+            "/src/morningbot/config/configuration_data.json",
+          ]
     - name: ubuntu
       spec:
         image: ubuntu
         command: ["sleep", "10"]
         dependencies:
-        - docker-build
+          - docker-build

@@ -2,25 +2,25 @@ apiVersion: pipelines.bramble.dev/v1alpha1
 kind: Pipeline
 metadata:
   name: sleepy
-  namespace: testns
+  namespace: bramble-test
 spec:
   tasks:
     - name: root
       spec:
         image: ubuntu
         command:
-        - sleep
-        - "10"
+          - sleep
+          - "10"
         dependencies:
-        - left
-        - middle
-        - right
+          - left
+          - middle
+          - right
     - name: left
       spec:
         image: ubuntu
         command: ["sleep", "3"]
-        dependencies: 
-        - left-left
+        dependencies:
+          - left-left
     - name: right
       spec:
         image: ubuntu
@@ -30,7 +30,7 @@ spec:
         image: ubuntu
         command: ["sleep", "7"]
         dependencies:
-        - middle-left
+          - middle-left
     - name: middle-left
       spec:
         image: ubuntu

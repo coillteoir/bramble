@@ -9,13 +9,21 @@ rules:
   - ""
   resources:
   - persistentvolumeclaims
-  - persistentvolumes
-  - pods
   verbs:
   - create
   - delete
   - get
   - list
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - watch
 - apiGroups:
   - pipelines.bramble.dev
   resources:

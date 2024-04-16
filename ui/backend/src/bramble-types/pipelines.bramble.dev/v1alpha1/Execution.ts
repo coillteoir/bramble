@@ -51,9 +51,6 @@ const schema = {
     },
     "status": {
       "properties": {
-        "completed": {
-          "type": "boolean"
-        },
         "completedTasks": {
           "items": {
             "type": "string"
@@ -61,14 +58,15 @@ const schema = {
           "type": "array",
           "nullable": true
         },
-        "error": {
-          "type": "boolean"
-        },
         "executing": {
           "items": {
             "type": "string"
           },
           "type": "array",
+          "nullable": true
+        },
+        "phase": {
+          "type": "string",
           "nullable": true
         },
         "repoCloned": {
@@ -80,10 +78,6 @@ const schema = {
           "nullable": true
         }
       },
-      "required": [
-        "completed",
-        "error"
-      ],
       "type": "object",
       "nullable": true
     }
@@ -129,21 +123,17 @@ export interface IExecution {
    */
   "status"?: {
     /**
-     * States if the pipeline is completed.
-     */
-    "completed": boolean;
-    /**
      * Tasks which have already succeeded.
      */
     "completedTasks"?: Array<string>;
     /**
-     * States if the pipeline has failed at any point.
-     */
-    "error": boolean;
-    /**
      * Describes which tasks are currently running.
      */
     "executing"?: Array<string>;
+    /**
+     * Describes the state of the execution
+     */
+    "phase"?: string;
     /**
      * Tells the controller if the repo is cloned.
      */
@@ -177,6 +167,8 @@ constructor(data?: ModelData<IExecution>) {
   } as IExecution);
 }
 }
+}
+
 
 
 setSchema(Execution, schemaId, () => {

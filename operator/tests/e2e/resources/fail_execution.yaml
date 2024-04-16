@@ -1,9 +1,9 @@
 apiVersion: pipelines.bramble.dev/v1alpha1
 kind: Execution
 metadata:
-  name: one-to-many
+  name: fail
   namespace: bramble-test
 spec:
-  repo: https://github.com/coillteoir/ctml
+  repo: https://github.com/coillteoir/bramble
   branch: master
-  pipeline: one-to-many
+  pipeline: failing
