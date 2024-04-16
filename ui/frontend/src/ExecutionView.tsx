@@ -66,7 +66,6 @@ const TaskView = (props: {
                         .slice(11, 19)}
                 </p>
             )}
-            <p>Logs perhaps?</p>
         </>
     );
 };
