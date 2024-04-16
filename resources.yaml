@@ -277,8 +277,21 @@ metadata:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: operator
+    app.kubernetes.io/instance: controller-manager
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: serviceaccount
+    app.kubernetes.io/part-of: operator
+  name: git-proxy
+  namespace: bramble
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
   creationTimestamp: null
-  name: bramble-ui-sa
+  name: ui
   namespace: bramble
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -444,6 +457,107 @@ metadata:
   labels:
     app.kubernetes.io/component: rbac
     app.kubernetes.io/created-by: operator
+    app.kubernetes.io/instance: execution-editor-role
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/part-of: operator
+  name: execution-editor-role
+rules:
+- apiGroups:
+  - pipelines.bramble.dev
+  resources:
+  - executions
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - pipelines.bramble.dev
+  resources:
+  - executions/status
+  verbs:
+  - get
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  - persistentvolumes
+  - pods
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+- apiGroups:
+  - pipelines.bramble.dev
+  resources:
+  - executions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - pipelines.bramble.dev
+  resources:
+  - executions/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - pipelines.bramble.dev
+  resources:
+  - executions/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - pipelines.bramble.dev
+  resources:
+  - pipelines
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - pipelines.bramble.dev
+  resources:
+  - pipelines/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - pipelines.bramble.dev
+  resources:
+  - pipelines/status
+  verbs:
+  - get
+  - patch
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: operator
     app.kubernetes.io/instance: pipeline-viewer-role
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: clusterrole
@@ -454,6 +568,7 @@ rules:
   - pipelines.bramble.dev
   resources:
   - pipelines
+  - executions
   verbs:
   - get
   - list
@@ -464,6 +579,21 @@ rules:
   - pipelines/status
   verbs:
   - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: ui-podviewer
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -529,15 +659,49 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: operator
+    app.kubernetes.io/instance: manager-rolebinding
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: clusterrolebinding
+    app.kubernetes.io/part-of: operator
+  name: manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: bramble-manager-role
+subjects:
+- kind: ServiceAccount
+  name: git-proxy
+  namespace: bramble
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
   creationTimestamp: null
-  name: ui-binding
+  name: ui-pipeline-binding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: pipeline-viewer-role
 subjects:
 - kind: ServiceAccount
-  name: ui-sa
+  name: ui
+  namespace: bramble
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  creationTimestamp: null
+  name: ui-pod-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ui-podviewer
+subjects:
+- kind: ServiceAccount
+  name: ui
   namespace: bramble
 ---
 apiVersion: v1
@@ -704,14 +868,15 @@ spec:
       - args:
         - -c
         - /config/config.yaml
-        env:
-        - name: IN_CLUSTER
-          value: "TRUE"
         image: davidlynchsd/bramble-git-proxy
         name: bramble-git-proxy
+        ports:
+        - containerPort: 9999
+          protocol: TCP
         volumeMounts:
         - mountPath: /config
           name: config
+      serviceAccountName: git-proxy
       volumes:
       - configMap:
           items:
@@ -742,11 +907,11 @@ spec:
     spec:
       containers:
       - env:
-        - name: IN_CLUSTER
-          value: "1"
+        - name: PORT
+          value: "5555"
         image: davidlynchsd/bramble-ui
         name: bramble-ui
         ports:
         - containerPort: 5555
           protocol: TCP
-      serviceAccountName: bramble-ui-sa
+      serviceAccountName: ui
