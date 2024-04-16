@@ -167,8 +167,6 @@ constructor(data?: ModelData<IExecution>) {
   } as IExecution);
 }
 }
-}
-
 
 
 setSchema(Execution, schemaId, () => {
