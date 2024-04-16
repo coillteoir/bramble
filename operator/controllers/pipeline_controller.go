@@ -48,6 +48,10 @@ func (r *PipelineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 
+	if pipeline.GetDeletionTimestamp() != nil {
+		return ctrl.Result{}, nil
+	}
+
 	log.Log.WithName("pipeline_logs").
 		Info(fmt.Sprintf("Name: %v", pipeline.ObjectMeta.Name))
 

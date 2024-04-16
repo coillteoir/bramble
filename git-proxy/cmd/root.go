@@ -7,7 +7,6 @@ package cmd
 import (
 	"fmt"
 	"net/http"
-	"path/filepath"
 	"os"
 	"path/filepath"
 	"time"

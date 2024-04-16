@@ -9,8 +9,6 @@ rules:
   - ""
   resources:
   - persistentvolumeclaims
-  - persistentvolumes
-  - pods
   verbs:
   - create
   - delete

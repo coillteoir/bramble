@@ -44,7 +44,7 @@ type ExecutionReconciler struct {
 //+kubebuilder:rbac:groups=pipelines.bramble.dev,resources=executions,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=pipelines.bramble.dev,resources=executions/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=pipelines.bramble.dev,resources=executions/finalizers,verbs=update
-//+kubebuilder:rbac:groups="",resources=pods;persistentvolumes;persistentvolumeclaims,verbs=create;delete;list;get
+//+kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=create;delete;list;get
 //+kubebuilder:rbac:groups="batch",resources=jobs,verbs=create;delete;list;get;watch
 
 func toContinue(execution *pipelinesv1alpha1.Execution) bool {
@@ -81,26 +81,7 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, err
 	}
 
-	// Check if volume exists
-	pvList := &corev1.PersistentVolumeList{}
-	err = reconciler.Client.List(ctx, pvList)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	execution.Status.VolumeProvisioned = checkProvision(pvList, execution)
-	err = reconciler.Status().Update(ctx, execution)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	var pvc *corev1.PersistentVolumeClaim
-	if !execution.Status.VolumeProvisioned {
-		err = initExecution(ctx, reconciler, execution, pvc)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-	}
-
+	pvc := &corev1.PersistentVolumeClaim{}
 	listOptions := generateListOptions(execution)
 	pvcList, err := getExecutionPvcs(listOptions, reconciler, ctx)
 	if err != nil {
@@ -112,10 +93,18 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 	})
 	if pvcIndex != -1 {
 		pvc = &pvcList.Items[pvcIndex]
+
+		execution.Status.VolumeProvisioned = pvc != nil
+		err = reconciler.Status().Update(ctx, execution)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 		err = ctrl.SetControllerReference(execution, pvc, reconciler.Scheme)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
+	} else {
+		logger.Info("no pvc found after repo cloned")
 	}
 
 	exeJobs, err := getExecutionJobs(listOptions, reconciler, ctx)
@@ -132,8 +121,12 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 		}
 	}
 
-	// NOTE This algorithm assumes tasks are in their topological order
-	// Needs to be reworked to handle unsorted matricies
+	if !execution.Status.VolumeProvisioned {
+		err = initExecution(ctx, reconciler, execution, pvc)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	}
 
 	if execution.Status.VolumeProvisioned &&
 		execution.Status.RepoCloned {
@@ -153,16 +146,6 @@ func (reconciler *ExecutionReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	return ctrl.Result{RequeueAfter: 15 * time.Duration(time.Second)}, nil
-}
-
-func verifyClone(exeJobs *batchv1.JobList, execution *pipelinesv1alpha1.Execution) bool {
-	jobIndex := slices.IndexFunc(exeJobs.Items, func(job batchv1.Job) bool {
-		return (job.ObjectMeta.Name == fmt.Sprintf("%v-cloner", execution.ObjectMeta.Name))
-	})
-	if jobIndex != -1 {
-		return exeJobs.Items[jobIndex].Status.Succeeded == 1
-	}
-	return false
 }
 
 func executePipeline(
@@ -187,11 +170,11 @@ func executePipeline(
 	)
 	if err != nil {
 		execution.Status.Phase = pipelinesv1alpha1.ExecutionError
-		err = reconciler.Status().Update(ctx, execution)
+		job_err := reconciler.Status().Update(ctx, execution)
 		if err != nil {
 			return err
 		}
-		return err
+		return job_err
 	}
 	err = reconciler.Status().Update(ctx, execution)
 	if err != nil {
@@ -211,13 +194,12 @@ func executePipeline(
 	return nil
 }
 
-func checkProvision(pvs *corev1.PersistentVolumeList, execution *pipelinesv1alpha1.Execution) bool {
-	pvIndex := slices.IndexFunc(pvs.Items, func(pv corev1.PersistentVolume) bool {
-		return pv.ObjectMeta.Name == fmt.Sprintf("%v-pv", execution.ObjectMeta.Name)
+func verifyClone(exeJobs *batchv1.JobList, execution *pipelinesv1alpha1.Execution) bool {
+	jobIndex := slices.IndexFunc(exeJobs.Items, func(job batchv1.Job) bool {
+		return (job.ObjectMeta.Labels["bramble-task"] == "cloner" && job.ObjectMeta.Labels["bramble-execution"] == execution.ObjectMeta.Name)
 	})
-	if pvIndex != -1 {
-		pv := pvs.Items[pvIndex]
-		return !(pv.Status.Phase == corev1.VolumeFailed || pv.Status.Phase == corev1.VolumePending)
+	if jobIndex != -1 {
+		return exeJobs.Items[jobIndex].Status.Succeeded == 1
 	}
 	return false
 }

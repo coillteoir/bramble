@@ -1,7 +1,7 @@
 OWNER?=davidlynchsd
 
 build: vet
-	go build -o bin/bramble .
+	CGO_ENABLED=0 go build -o bin/bramble .
 
 run:
 	go run .
