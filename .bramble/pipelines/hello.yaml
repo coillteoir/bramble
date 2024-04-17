@@ -1,0 +1,12 @@
+
+apiVersion: pipelines.bramble.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: hello
+  namespace: bramble
+spec:
+  tasks:
+  - name: hello
+    spec:
+      image: alpine
+      command: ["echo", "hello", "world"]
