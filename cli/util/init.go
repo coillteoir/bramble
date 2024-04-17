@@ -22,8 +22,9 @@ metadata:
 spec:
   tasks:
   - name: hello
-    image: alpine
-    command: ["echo", "hello", "world"]
+    spec:
+      image: alpine
+      command: ["echo", "hello", "world"]
 `
 	pipelinesKustomization = `
 resources:

@@ -19,7 +19,7 @@ k8s-deploy:
 	kubectl apply -k k8s-manifests
 
 vet:
-	gofumpt -w **/*.go
+	go fmt ./...
 	go vet ./...
 
 test: build
