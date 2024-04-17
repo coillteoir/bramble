@@ -11,9 +11,8 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "bramble",
-	Short: "A command line utility for the bramble CI/CD system",
-	// Run: func(cmd *cobra.Command, args []string) { },
+	Use:          "bramble",
+	Short:        "A command line utility for the bramble CI/CD system",
 	SilenceUsage: true,
 }
 

@@ -4,6 +4,7 @@ build: crd-generate
 	make -C operator
 	make -C ui
 	make -C git-proxy
+	make -C cli
 
 docker-build: crd-generate
 	make -C operator docker-build OWNER=${OWNER}

@@ -15,11 +15,11 @@ var installCmd = &cobra.Command{
 	Use:   "install",
 	Short: "Install the most recent version of bramble to your kubernetes cluster.",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		fmt.Println("Intalling bramble...")
 		err := util.Install(true)
 		if err != nil {
 			return err
 		}
-		fmt.Println("\n\nBramble successfully installed to cluster.")
 		return nil
 	},
 }

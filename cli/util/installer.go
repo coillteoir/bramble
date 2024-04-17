@@ -69,7 +69,7 @@ func CheckInstallation() (bool, error) {
 	}
 
 	return (slices.IndexFunc(namespaces.Items, func(ns corev1.Namespace) bool {
-		return ns.ObjectMeta.Name == "bramble"
+		return ns.ObjectMeta.Name == "bramble" && ns.Status.Phase != corev1.NamespaceTerminating
 	}) != -1), nil
 }
 
@@ -77,7 +77,7 @@ func Install(install bool) error {
 	program := "kubectl"
 	command := exec.Command("which", program)
 	if err := command.Run(); err != nil {
-		return fmt.Errorf("program %v not found on system, please install to install Bramble", program)
+		return fmt.Errorf("%v not found on system, please install", program)
 	}
 
 	installed, err := CheckInstallation()
@@ -85,9 +85,18 @@ func Install(install bool) error {
 		return err
 	}
 	action := ""
+	if install && installed {
+		fmt.Println("Bramble is already installed on this cluster, enjoy!")
+		return nil
+	}
+	if !install && !installed {
+		fmt.Println("Bramble is not installed on this cluster")
+		return nil
+	}
 	if install && !installed {
 		action = "apply"
-	} else {
+	}
+	if !install && installed {
 		action = "delete"
 	}
 
@@ -110,6 +119,11 @@ func Install(install bool) error {
 		if !errors.Is(io.EOF, err) {
 			return err
 		}
+	}
+	if install {
+		fmt.Println("\n\nBramble successfully installed to cluster. Deployments may need time to stabilize")
+	} else {
+		fmt.Println("\n\nBramble successfully uninstalled from cluster.")
 	}
 	return nil
 }
