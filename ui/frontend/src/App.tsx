@@ -104,7 +104,7 @@ const App = (): React.ReactNode => {
                 <h1 className="text-3xl font-bold">Bramble</h1>
 
             </header>
-            <div className="flex h-screen border-4 border-slate-600">
+            <div className="flex h-screen">
                 <div className="inline-block w-1/3 lg:w-1/6">
                     <NamespaceSearch
                         inputRef={inputRef}

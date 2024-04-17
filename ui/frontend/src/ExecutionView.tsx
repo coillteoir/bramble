@@ -43,11 +43,11 @@ const TaskView = (props: {
             <h1 className="text-2xl font-bold">Task: {taskInfo.name}</h1>
             <h2 className="text-xl font-bold">Image: {taskInfo.spec.image}</h2>
             <h2 className="text-lg font-bold">
-                Command: {taskInfo.spec.command.join("\n")}
+                Command: <code>{taskInfo.spec.command.join("\n")}</code>
             </h2>
             {taskInfo.spec.dependencies && (
                 <>
-                    <h2 className="">Dependencies</h2>
+                    <h2 className="font-bold">Dependencies</h2>
                     <ul>
                         {taskInfo.spec.dependencies.map((dep, i) => (
                             <li key={i}>{dep}</li>
@@ -56,7 +56,7 @@ const TaskView = (props: {
                 </>
             )}
             {taskInfo.spec.workdir && (
-                <h2 className="">WorkDir: {taskInfo.spec.workdir}</h2>
+                <h2 className="font-bold">WorkDir: {taskInfo.spec.workdir}</h2>
             )}
             {jobStatus && (
                 <p>
@@ -138,7 +138,6 @@ const ExecutionView = (props: {
                 style={{
                     width: "100%",
                     height: "100%",
-                    border: "yellow 3px solid",
                 }}
             >
                 <ReactFlow
@@ -153,7 +152,7 @@ const ExecutionView = (props: {
                         },
                     }}
                 />
-                <div className="inline-block h-full w-2/5 bg-slate-800">
+                <div className="inline-block h-full w-2/5">
                     <TaskView
                         task={props.pipeline.spec?.tasks?.find(
                             (task) => task.name === focusedTask
